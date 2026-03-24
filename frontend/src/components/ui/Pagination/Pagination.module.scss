@@ -1,0 +1,52 @@
+.pagination {
+  @include flex-between;
+  padding: $space-4 0;
+  flex-wrap: wrap;
+  gap: $space-3;
+}
+
+.info {
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+}
+
+.buttons {
+  display: flex;
+  gap: $space-1;
+}
+
+.btn {
+  @include button-reset;
+  @include flex-center;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 $space-2;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+  border: 1px solid $color-border;
+  transition: all $transition-fast;
+
+  &:hover:not(:disabled) {
+    background: $color-surface-hover;
+    color: $color-text;
+    border-color: $color-border-light;
+  }
+
+  &:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+}
+
+.active {
+  background: $color-primary;
+  color: #fff;
+  border-color: $color-primary;
+
+  &:hover:not(:disabled) {
+    background: $color-primary-dark;
+    border-color: $color-primary-dark;
+    color: #fff;
+  }
+}

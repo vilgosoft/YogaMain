@@ -1,0 +1,64 @@
+.sidebar {
+  width: 240px;
+  background: $color-surface;
+  border-right: 1px solid $color-border;
+  min-height: calc(100vh - 64px);
+  padding: $space-6 0;
+  flex-shrink: 0;
+
+  @media (max-width: $bp-lg) {
+    width: 200px;
+  }
+
+  @media (max-width: $bp-md) {
+    display: none;
+  }
+}
+
+.title {
+  padding: 0 $space-6 $space-4;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+  padding: 0 $space-3;
+}
+
+.link {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  padding: $space-3 $space-4;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-muted;
+  text-decoration: none;
+  transition: all $transition-fast;
+
+  &:hover {
+    background: $color-surface-hover;
+    color: $color-text;
+  }
+
+  &--active {
+    background: rgba($color-primary, 0.1);
+    color: $color-primary-light;
+
+    .icon {
+      color: $color-primary-light;
+    }
+  }
+}
+
+.icon {
+  font-size: $font-size-lg;
+  display: flex;
+}

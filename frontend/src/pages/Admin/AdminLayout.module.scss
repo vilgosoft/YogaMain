@@ -1,0 +1,14 @@
+.layout {
+  display: flex;
+  min-height: calc(100vh - 64px);
+}
+
+.content {
+  flex: 1;
+  padding: $space-6 $space-8;
+  overflow-x: hidden;
+
+  @media (max-width: $bp-md) {
+    padding: $space-4;
+  }
+}

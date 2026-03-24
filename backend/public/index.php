@@ -34,10 +34,42 @@ $router->post('/auth/logout',   [$authController, 'logout'], [AuthMiddleware::cl
 $router->get('/auth/me',        [$authController, 'me'],     [AuthMiddleware::class]);
 
 // =============================================
-// Admin Routes (added in Phase 3)
+// Admin Routes
 // =============================================
-// $adminUserController = new App\Controllers\AdminUserController();
-// $router->get('/admin/users', [$adminUserController, 'index'], [AuthMiddleware::class, AdminMiddleware::class]);
+$adminMiddleware = [AuthMiddleware::class, AdminMiddleware::class];
+
+// Dashboard Stats
+$adminCourseController = new App\Controllers\AdminCourseController();
+$router->get('/admin/dashboard/stats', [$adminCourseController, 'stats'], $adminMiddleware);
+
+// Categories
+$adminCategoryController = new App\Controllers\AdminCategoryController();
+$router->get('/admin/categories',      [$adminCategoryController, 'index'],  $adminMiddleware);
+$router->post('/admin/categories',     [$adminCategoryController, 'create'], $adminMiddleware);
+$router->put('/admin/categories/:id',  [$adminCategoryController, 'update'], $adminMiddleware);
+$router->delete('/admin/categories/:id', [$adminCategoryController, 'delete'], $adminMiddleware);
+
+// Courses
+$router->get('/admin/courses',         [$adminCourseController, 'index'],  $adminMiddleware);
+$router->post('/admin/courses',        [$adminCourseController, 'create'], $adminMiddleware);
+$router->put('/admin/courses/:id',     [$adminCourseController, 'update'], $adminMiddleware);
+$router->delete('/admin/courses/:id',  [$adminCourseController, 'delete'], $adminMiddleware);
+
+// Videos
+$adminVideoController = new App\Controllers\AdminVideoController();
+$router->get('/admin/videos/:courseId',  [$adminVideoController, 'index'],  $adminMiddleware);
+$router->post('/admin/videos',           [$adminVideoController, 'create'], $adminMiddleware);
+$router->put('/admin/videos/:id',        [$adminVideoController, 'update'], $adminMiddleware);
+$router->delete('/admin/videos/:id',     [$adminVideoController, 'delete'], $adminMiddleware);
+
+// Users
+$adminUserController = new App\Controllers\AdminUserController();
+$router->get('/admin/users',           [$adminUserController, 'index'],  $adminMiddleware);
+$router->patch('/admin/users/:id',     [$adminUserController, 'update'], $adminMiddleware);
+
+// Transactions
+$adminTransactionController = new App\Controllers\AdminTransactionController();
+$router->get('/admin/transactions',    [$adminTransactionController, 'index'], $adminMiddleware);
 
 // =============================================
 // Public Course Routes (added in Phase 4)

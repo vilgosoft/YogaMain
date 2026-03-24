@@ -1,0 +1,64 @@
+.wrapper {
+  overflow-x: auto;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  @include scrollbar-dark;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th, td {
+    padding: $space-3 $space-4;
+    text-align: left;
+    border-bottom: 1px solid $color-border;
+    white-space: nowrap;
+  }
+
+  th {
+    background: $color-surface;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-semibold;
+    color: $color-text-muted;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    position: sticky;
+    top: 0;
+  }
+
+  td {
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+  }
+
+  tbody tr {
+    transition: background $transition-fast;
+
+    &:hover {
+      background: $color-surface-hover;
+    }
+
+    &:last-child td {
+      border-bottom: none;
+    }
+  }
+}
+
+.clickable {
+  cursor: pointer;
+}
+
+.loading {
+  @include flex-center;
+  padding: $space-12;
+}
+
+.empty {
+  @include flex-center;
+  padding: $space-12;
+  color: $color-text-muted;
+  font-size: $font-size-sm;
+  border: 1px dashed $color-border;
+  border-radius: $radius-lg;
+}

@@ -1,0 +1,54 @@
+.title {
+  font-size: $font-size-2xl;
+  font-weight: $font-weight-bold;
+  margin-bottom: $space-6;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: $space-4;
+}
+
+.card {
+  @include card;
+  display: flex;
+  align-items: center;
+  gap: $space-4;
+  padding: $space-5 $space-6;
+}
+
+.cardIcon {
+  @include flex-center;
+  width: 48px;
+  height: 48px;
+  background: rgba($color-primary, 0.1);
+  border-radius: $radius-lg;
+  color: $color-primary-light;
+  font-size: $font-size-xl;
+  flex-shrink: 0;
+}
+
+.cardInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.cardValue {
+  font-size: $font-size-2xl;
+  font-weight: $font-weight-bold;
+  color: $color-text;
+  line-height: 1.2;
+}
+
+.cardLabel {
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.center {
+  @include flex-center;
+  min-height: 300px;
+}

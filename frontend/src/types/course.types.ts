@@ -4,7 +4,7 @@ export interface Category {
   slug: string;
   description: string | null;
   sort_order: number;
-  is_active: boolean;
+  is_active: boolean | number;
 }
 
 export interface Course {

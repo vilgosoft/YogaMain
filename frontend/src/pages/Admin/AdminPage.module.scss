@@ -1,0 +1,140 @@
+// Shared styles for all admin pages
+
+.header {
+  @include flex-between;
+  margin-bottom: $space-6;
+  flex-wrap: wrap;
+  gap: $space-4;
+
+  h2 {
+    font-size: $font-size-2xl;
+    font-weight: $font-weight-bold;
+  }
+}
+
+.actions {
+  display: flex;
+  gap: $space-2;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+}
+
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: $space-3;
+  margin-top: $space-2;
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $space-4;
+
+  @media (max-width: $bp-sm) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.filters {
+  @include flex-between;
+  margin-bottom: $space-4;
+  flex-wrap: wrap;
+  gap: $space-3;
+}
+
+.filterGroup {
+  display: flex;
+  gap: $space-3;
+  align-items: center;
+}
+
+.toggle {
+  @include button-reset;
+  position: relative;
+  width: 44px;
+  height: 24px;
+  border-radius: $radius-full;
+  background: $color-border;
+  transition: background $transition-fast;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #fff;
+    transition: transform $transition-fast;
+  }
+
+  &[data-active="true"] {
+    background: $color-success;
+
+    &::after {
+      transform: translateX(20px);
+    }
+  }
+}
+
+.thumbnail {
+  width: 60px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: $radius-sm;
+  background: $color-surface-hover;
+}
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-1;
+  padding: $space-1 $space-2;
+  border-radius: $radius-full;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+
+  &--pending { background: rgba($color-warning, 0.15); color: $color-warning; }
+  &--processing { background: rgba($color-info, 0.15); color: $color-info; }
+  &--complete { background: rgba($color-success, 0.15); color: $color-success; }
+  &--failed { background: rgba($color-error, 0.15); color: $color-error; }
+  &--success { background: rgba($color-success, 0.15); color: $color-success; }
+  &--initiated { background: rgba($color-text-muted, 0.15); color: $color-text-muted; }
+  &--refunded { background: rgba($color-info, 0.15); color: $color-info; }
+}
+
+.coursesList {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+
+  span {
+    font-size: $font-size-xs;
+    color: $color-text-muted;
+  }
+}
+
+.uploadArea {
+  border: 2px dashed $color-border;
+  border-radius: $radius-lg;
+  padding: $space-6;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color $transition-fast;
+
+  &:hover {
+    border-color: $color-primary;
+  }
+
+  p {
+    font-size: $font-size-sm;
+    color: $color-text-muted;
+    margin-top: $space-2;
+  }
+}
