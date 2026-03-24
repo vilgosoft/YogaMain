@@ -1,0 +1,77 @@
+@import 'reset';
+@import 'typography';
+@import 'animations';
+
+// Global utility classes
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.container {
+  @include container;
+}
+
+.page {
+  flex: 1;
+  padding: $space-8 0;
+}
+
+// Status badges
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: $space-1 $space-3;
+  border-radius: $radius-full;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+
+  &--success {
+    background: rgba($color-success, 0.15);
+    color: $color-success;
+  }
+
+  &--error {
+    background: rgba($color-error, 0.15);
+    color: $color-error;
+  }
+
+  &--warning {
+    background: rgba($color-warning, 0.15);
+    color: $color-warning;
+  }
+
+  &--info {
+    background: rgba($color-info, 0.15);
+    color: $color-info;
+  }
+
+  &--primary {
+    background: rgba($color-primary, 0.15);
+    color: $color-primary-light;
+  }
+
+  &--free {
+    background: rgba($color-accent, 0.15);
+    color: $color-accent;
+  }
+}
+
+// Progress bar
+.progress-bar {
+  width: 100%;
+  height: 4px;
+  background: $color-border;
+  border-radius: $radius-full;
+  overflow: hidden;
+
+  &__fill {
+    height: 100%;
+    background: $gradient-primary;
+    border-radius: $radius-full;
+    transition: width $transition-slow;
+  }
+}

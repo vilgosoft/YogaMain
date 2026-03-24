@@ -1,0 +1,67 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+}
+
+.label {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+}
+
+.wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.icon {
+  position: absolute;
+  left: $space-3;
+  color: $color-text-muted;
+  display: flex;
+  align-items: center;
+  font-size: $font-size-md;
+  pointer-events: none;
+}
+
+.input {
+  width: 100%;
+  padding: $space-3 $space-4;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  color: $color-text;
+  font-size: $font-size-base;
+  transition: border-color $transition-fast, box-shadow $transition-fast;
+  outline: none;
+
+  &::placeholder {
+    color: $color-text-subtle;
+  }
+
+  &:focus {
+    border-color: $color-primary;
+    box-shadow: 0 0 0 3px rgba($color-primary, 0.15);
+  }
+
+  &--icon {
+    padding-left: $space-10;
+  }
+}
+
+.error {
+  font-size: $font-size-xs;
+  color: $color-error;
+}
+
+.field--error {
+  .input {
+    border-color: $color-error;
+
+    &:focus {
+      box-shadow: 0 0 0 3px rgba($color-error, 0.15);
+    }
+  }
+}

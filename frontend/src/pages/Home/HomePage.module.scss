@@ -1,0 +1,268 @@
+.home {
+  overflow: hidden;
+}
+
+// ============================================
+// Hero Section
+// ============================================
+.hero {
+  @include container;
+  padding-top: $space-16;
+  padding-bottom: $space-16;
+  text-align: center;
+  position: relative;
+
+  @include respond(md) {
+    padding-top: $space-24;
+    padding-bottom: $space-20;
+  }
+
+  // Ambient glow effects
+  &::before {
+    content: '';
+    position: absolute;
+    top: -100px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba($color-primary, 0.12), transparent 70%);
+    pointer-events: none;
+  }
+}
+
+.heroContent {
+  position: relative;
+  z-index: 1;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.heroBadge {
+  display: inline-block;
+  padding: $space-2 $space-4;
+  background: rgba($color-primary, 0.1);
+  border: 1px solid rgba($color-primary, 0.3);
+  border-radius: $radius-full;
+  font-size: $font-size-sm;
+  color: $color-primary-light;
+  margin-bottom: $space-6;
+}
+
+.heroGradient {
+  @include gradient-text;
+}
+
+.hero h1 {
+  font-size: $font-size-3xl;
+  font-weight: $font-weight-bold;
+  line-height: $line-height-tight;
+  margin-bottom: $space-6;
+
+  @include respond(md) {
+    font-size: $font-size-hero;
+  }
+}
+
+.heroSub {
+  font-size: $font-size-md;
+  color: $color-text-muted;
+  max-width: 600px;
+  margin: 0 auto $space-8;
+  line-height: $line-height-relaxed;
+}
+
+.heroCta {
+  display: flex;
+  justify-content: center;
+  gap: $space-4;
+  flex-wrap: wrap;
+}
+
+// ============================================
+// Stats
+// ============================================
+.stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: $space-4;
+  margin-top: $space-16;
+  position: relative;
+  z-index: 1;
+
+  @include respond(md) {
+    grid-template-columns: repeat(4, 1fr);
+    gap: $space-6;
+  }
+}
+
+.statItem {
+  @include card;
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  padding: $space-5 $space-4;
+
+  &:hover {
+    @include glow-border($color-primary);
+  }
+}
+
+.statIcon {
+  @include flex-center;
+  width: 44px;
+  height: 44px;
+  background: rgba($color-primary, 0.1);
+  border-radius: $radius-md;
+  color: $color-primary-light;
+  font-size: $font-size-xl;
+  flex-shrink: 0;
+}
+
+.statValue {
+  display: block;
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $color-text;
+}
+
+.statLabel {
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+// ============================================
+// Features Section
+// ============================================
+.features {
+  @include container;
+  padding: $space-16 0;
+
+  @include respond(md) {
+    padding: $space-24 0;
+  }
+}
+
+.featuresHeader {
+  text-align: center;
+  margin-bottom: $space-12;
+
+  h2 {
+    font-size: $font-size-2xl;
+    margin-bottom: $space-3;
+
+    @include respond(md) {
+      font-size: $font-size-3xl;
+    }
+  }
+
+  p {
+    color: $color-text-muted;
+    font-size: $font-size-md;
+  }
+}
+
+.featureGrid {
+  @include grid(300px, $space-6);
+}
+
+.featureCard {
+  @include card;
+  padding: $space-6;
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: $gradient-primary;
+    opacity: 0;
+    transition: opacity $transition-base;
+  }
+
+  &:hover::before {
+    opacity: 1;
+  }
+
+  h3 {
+    font-size: $font-size-lg;
+    margin-bottom: $space-3;
+    color: $color-text;
+  }
+
+  p {
+    font-size: $font-size-sm;
+    color: $color-text-muted;
+    line-height: $line-height-relaxed;
+  }
+}
+
+// ============================================
+// CTA Section
+// ============================================
+.cta {
+  padding: $space-16 0;
+
+  @include respond(md) {
+    padding: $space-24 0;
+  }
+}
+
+.ctaInner {
+  @include container;
+  text-align: center;
+  background: $gradient-card;
+  border: 1px solid $color-border;
+  border-radius: $radius-xl;
+  padding: $space-12 $space-6;
+  position: relative;
+  overflow: hidden;
+
+  @include respond(md) {
+    padding: $space-16 $space-8;
+  }
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(ellipse at center, rgba($color-primary, 0.08), transparent 60%);
+    pointer-events: none;
+  }
+
+  h2 {
+    font-size: $font-size-2xl;
+    margin-bottom: $space-4;
+    position: relative;
+
+    @include respond(md) {
+      font-size: $font-size-3xl;
+    }
+  }
+
+  p {
+    color: $color-text-muted;
+    font-size: $font-size-md;
+    margin-bottom: $space-8;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+    position: relative;
+  }
+}
+
+.ctaButtons {
+  display: flex;
+  justify-content: center;
+  gap: $space-4;
+  flex-wrap: wrap;
+  position: relative;
+}

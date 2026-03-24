@@ -1,0 +1,95 @@
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: $space-2;
+  border: none;
+  border-radius: $radius-md;
+  font-weight: $font-weight-semibold;
+  cursor: pointer;
+  transition: all $transition-base;
+  white-space: nowrap;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  // Sizes
+  &--sm {
+    padding: $space-2 $space-4;
+    font-size: $font-size-sm;
+  }
+
+  &--md {
+    padding: $space-3 $space-6;
+    font-size: $font-size-base;
+  }
+
+  &--lg {
+    padding: $space-4 $space-8;
+    font-size: $font-size-md;
+  }
+
+  // Variants
+  &--primary {
+    background: $gradient-primary;
+    color: $color-text;
+    box-shadow: 0 2px 10px rgba($color-primary, 0.3);
+
+    &:hover:not(:disabled) {
+      box-shadow: 0 4px 20px rgba($color-primary, 0.5);
+      transform: translateY(-1px);
+    }
+  }
+
+  &--secondary {
+    background: $color-surface;
+    color: $color-text;
+    border: 1px solid $color-border;
+
+    &:hover:not(:disabled) {
+      background: $color-surface-hover;
+      border-color: $color-border-light;
+    }
+  }
+
+  &--outline {
+    background: transparent;
+    color: $color-primary-light;
+    border: 1px solid $color-primary;
+
+    &:hover:not(:disabled) {
+      background: rgba($color-primary, 0.1);
+    }
+  }
+
+  &--ghost {
+    background: transparent;
+    color: $color-text-secondary;
+
+    &:hover:not(:disabled) {
+      background: $color-surface;
+      color: $color-text;
+    }
+  }
+
+  &--full {
+    width: 100%;
+  }
+}
+
+.icon {
+  display: flex;
+  align-items: center;
+  font-size: 1.1em;
+}
+
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}

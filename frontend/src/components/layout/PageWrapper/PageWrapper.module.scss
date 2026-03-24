@@ -1,0 +1,6 @@
+.wrapper {
+  @include container;
+  flex: 1;
+  padding-top: $space-8;
+  padding-bottom: $space-8;
+}

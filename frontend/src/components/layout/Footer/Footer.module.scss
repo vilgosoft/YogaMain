@@ -1,0 +1,84 @@
+.footer {
+  border-top: 1px solid $color-border;
+  background: $color-bg-alt;
+  padding: $space-12 0 $space-6;
+  margin-top: auto;
+}
+
+.inner {
+  @include container;
+}
+
+.brand {
+  margin-bottom: $space-8;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  color: $color-text;
+  margin-bottom: $space-3;
+}
+
+.logoIcon {
+  @include flex-center;
+  width: 28px;
+  height: 28px;
+  background: $gradient-primary;
+  border-radius: $radius-sm;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-bold;
+  color: #fff;
+}
+
+.tagline {
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+  max-width: 300px;
+}
+
+.links {
+  display: flex;
+  gap: $space-16;
+  margin-bottom: $space-8;
+
+  @media (max-width: $bp-sm) {
+    gap: $space-8;
+  }
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+
+  a {
+    font-size: $font-size-sm;
+    color: $color-text-muted;
+    text-decoration: none;
+
+    &:hover {
+      color: $color-text;
+    }
+  }
+}
+
+.columnTitle {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text;
+  margin-bottom: $space-1;
+}
+
+.bottom {
+  padding-top: $space-6;
+  border-top: 1px solid $color-border;
+
+  p {
+    font-size: $font-size-xs;
+    color: $color-text-subtle;
+  }
+}
