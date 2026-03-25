@@ -7,6 +7,7 @@ use App\Models\Course;
 use App\Models\Category;
 use App\Models\Video;
 use App\Models\Enrollment;
+use App\Services\JwtService;
 
 class CourseController
 {
@@ -60,10 +61,12 @@ class CourseController
         }, $videos);
 
         // Check enrollment if user is authenticated
+        // This is a public route (no AuthMiddleware), so we parse the JWT manually
         $isEnrolled = false;
-        if (!empty($GLOBALS['auth_user'])) {
+        $authUser = $this->getOptionalAuthUser();
+        if ($authUser) {
             $enrollmentModel = new Enrollment();
-            $isEnrolled = $enrollmentModel->isEnrolled($GLOBALS['auth_user']['id'], $course['id']);
+            $isEnrolled = $enrollmentModel->isEnrolled($authUser['id'], $course['id']);
         }
 
         Response::json([
@@ -90,5 +93,72 @@ class CourseController
     public function landingStats(): void
     {
         Response::json($this->courseModel->getLandingStats());
+    }
+
+    /**
+     * GET /videos/:id — returns video URL for enrolled users
+     */
+    public function getVideo(array $params): void
+    {
+        $videoId = (int) $params['id'];
+        $video = $this->videoModel->findById($videoId);
+
+        if (!$video) {
+            Response::error('Video not found', 'NOT_FOUND', 404);
+        }
+
+        // Preview videos are publicly accessible
+        if ($video['is_preview']) {
+            Response::json([
+                'video_url' => $video['original_file'],
+                'title'     => $video['title'],
+            ]);
+            return;
+        }
+
+        // Non-preview videos require enrollment
+        $authUser = $GLOBALS['auth_user'] ?? null;
+        if (!$authUser) {
+            Response::error('Authentication required', 'UNAUTHORIZED', 401);
+        }
+
+        $enrollmentModel = new Enrollment();
+        if (!$enrollmentModel->isEnrolled($authUser['id'], $video['course_id'])) {
+            Response::error('You must be enrolled in this course', 'FORBIDDEN', 403);
+        }
+
+        Response::json([
+            'video_url' => $video['original_file'],
+            'title'     => $video['title'],
+        ]);
+    }
+
+    /**
+     * Try to extract user info from JWT without requiring authentication.
+     * Returns null if no valid token is present.
+     */
+    private function getOptionalAuthUser(): ?array
+    {
+        // Check if middleware already set it
+        if (!empty($GLOBALS['auth_user'])) {
+            return $GLOBALS['auth_user'];
+        }
+
+        $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+        if (!preg_match('/^Bearer\s+(.+)$/i', $authHeader, $matches)) {
+            return null;
+        }
+
+        $jwt = new JwtService();
+        $decoded = $jwt->decode($matches[1]);
+        if (!$decoded) {
+            return null;
+        }
+
+        return [
+            'id'    => $decoded->sub,
+            'email' => $decoded->email,
+            'role'  => $decoded->role,
+        ];
     }
 }

@@ -17,6 +17,7 @@ import { CourseFormPage } from '@/pages/Admin/CourseFormPage';
 import { VideosPage } from '@/pages/Admin/VideosPage';
 import { UsersPage } from '@/pages/Admin/UsersPage';
 import { TransactionsPage } from '@/pages/Admin/TransactionsPage';
+import { PlayerPage } from '@/pages/Player/PlayerPage';
 
 export function AppRoutes() {
   return (
@@ -30,6 +31,14 @@ export function AppRoutes() {
       <Route path={ROUTES.PAYMENT_CALLBACK} element={<PaymentCallbackPage />} />
 
       {/* Protected Routes */}
+      <Route
+        path={ROUTES.PLAYER}
+        element={
+          <ProtectedRoute>
+            <PlayerPage />
+          </ProtectedRoute>
+        }
+      />
       <Route
         path={ROUTES.MY_LEARNING}
         element={

@@ -183,6 +183,14 @@
   flex-shrink: 0;
 }
 
+.lessonClickable {
+  cursor: pointer;
+
+  &:hover {
+    background: rgba($color-primary, 0.06);
+  }
+}
+
 .previewIcon {
   color: $color-primary-light;
   flex-shrink: 0;
@@ -211,6 +219,18 @@
   padding: $space-6;
   @include flex-col;
   gap: $space-4;
+}
+
+.enrolledBanner {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  padding: $space-3 $space-4;
+  background: rgba($color-accent, 0.12);
+  color: $color-accent;
+  border-radius: $radius-md;
+  font-weight: $font-weight-semibold;
+  font-size: $font-size-sm;
 }
 
 .planFieldset {

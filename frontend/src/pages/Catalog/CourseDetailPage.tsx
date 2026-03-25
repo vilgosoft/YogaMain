@@ -21,8 +21,8 @@ import {
   HiOutlineFilm,
   HiOutlinePlayCircle,
   HiOutlineLockClosed,
-  HiOutlineAcademicCap,
   HiOutlineSignal,
+  HiOutlineCheckCircle,
 } from 'react-icons/hi2';
 import styles from './CourseDetailPage.module.scss';
 
@@ -69,17 +69,27 @@ export function CourseDetailPage() {
       );
 
       if (data.course.is_free) {
-        // Free courses are auto-enrolled on the backend
         showToast('success', 'Successfully enrolled!');
         navigate(ROUTES.MY_LEARNING);
       } else {
-        // Redirect to PhonePe payment page
         window.location.href = result.redirect_url;
       }
     } catch (err) {
       showToast('error', getApiErrorMessage(err, 'Failed to initiate payment. Please try again.'));
     } finally {
       setPurchasing(false);
+    }
+  };
+
+  const handleVideoClick = (videoId: number, isPreview: boolean) => {
+    if (!data) return;
+
+    if (data.is_enrolled || isPreview) {
+      navigate(`/player/${data.course.id}/${videoId}`);
+    } else if (!isAuthenticated) {
+      showToast('info', 'Please login and enroll to watch this video');
+    } else {
+      showToast('info', 'Please enroll in this course to watch videos');
     }
   };
 
@@ -150,22 +160,29 @@ export function CourseDetailPage() {
                 {videos.length} lessons &middot; {formatVideoTime(totalDuration)} total
               </p>
               <ul className={styles.lessons}>
-                {videos.map((video, idx) => (
-                  <li key={video.id} className={styles.lesson}>
-                    <span className={styles.lessonNum}>{idx + 1}</span>
-                    <div className={styles.lessonInfo}>
-                      <span className={styles.lessonTitle}>{video.title}</span>
-                      {video.duration_sec != null && (
-                        <span className={styles.lessonDuration}>{formatVideoTime(video.duration_sec)}</span>
+                {videos.map((video, idx) => {
+                  const canPlay = is_enrolled || video.is_preview;
+                  return (
+                    <li
+                      key={video.id}
+                      className={`${styles.lesson} ${canPlay ? styles.lessonClickable : ''}`}
+                      onClick={() => handleVideoClick(video.id, !!video.is_preview)}
+                    >
+                      <span className={styles.lessonNum}>{idx + 1}</span>
+                      <div className={styles.lessonInfo}>
+                        <span className={styles.lessonTitle}>{video.title}</span>
+                        {video.duration_sec != null && (
+                          <span className={styles.lessonDuration}>{formatVideoTime(video.duration_sec)}</span>
+                        )}
+                      </div>
+                      {canPlay ? (
+                        <HiOutlinePlayCircle size={18} className={styles.previewIcon} />
+                      ) : (
+                        <HiOutlineLockClosed size={16} className={styles.lockIcon} />
                       )}
-                    </div>
-                    {video.is_preview ? (
-                      <HiOutlinePlayCircle size={18} className={styles.previewIcon} />
-                    ) : (
-                      <HiOutlineLockClosed size={16} className={styles.lockIcon} />
-                    )}
-                  </li>
-                ))}
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           </div>
@@ -174,86 +191,118 @@ export function CourseDetailPage() {
         {/* Sidebar */}
         <aside className={styles.sidebar}>
           <div className={styles.priceCard}>
-            {course.is_free ? (
-              <div className={styles.priceSection}>
-                <span className={styles.priceFree}>Free</span>
-              </div>
-            ) : (
+            {is_enrolled ? (
+              /* ---- ENROLLED STATE ---- */
               <>
-                <fieldset className={styles.planFieldset}>
-                  <legend className={styles.planLegend}>Plan Options &amp; Accessibility</legend>
-                  <p className={styles.planIntro}>
-                    Choose a duration and whether you want diet guidance included. The same options apply to every course.
-                  </p>
-                  {groupedPricingPlans().map((group) => (
-                    <div key={group.title} className={styles.planGroup}>
-                      <div className={styles.planGroupTitle}>{group.title}</div>
-                      <div className={styles.planOptions}>
-                        {group.plans.map((plan) => {
-                          const active = selectedPlanCode === plan.code;
-                          return (
-                            <label
-                              key={plan.code}
-                              className={`${styles.planOption} ${active ? styles.planOptionActive : ''}`}
-                            >
-                              <input
-                                type="radio"
-                                name="pricing-plan"
-                                value={plan.code}
-                                checked={active}
-                                onChange={() => setSelectedPlanCode(plan.code)}
-                              />
-                              <span className={styles.planOptionBody}>
-                                <span className={styles.planOptionLabel}>{plan.option}</span>
-                                <span className={styles.planOptionPrice}>
-                                  {formatOriginalPrice(plan.amount)}
-                                </span>
-                              </span>
-                            </label>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                </fieldset>
-                <div className={styles.priceSection}>
-                  <span className={styles.selectedPlanSummary}>Selected</span>
-                  <span className={styles.priceCurrent}>{formatOriginalPrice(selectedPlan.amount)}</span>
+                <div className={styles.enrolledBanner}>
+                  <HiOutlineCheckCircle size={24} />
+                  <span>You are enrolled</span>
                 </div>
+
+                <Button
+                  variant="primary"
+                  size="lg"
+                  fullWidth
+                  onClick={() => {
+                    const firstVideo = videos[0];
+                    if (firstVideo) {
+                      navigate(`/player/${course.id}/${firstVideo.id}`);
+                    } else {
+                      navigate(ROUTES.MY_LEARNING);
+                    }
+                  }}
+                >
+                  <HiOutlinePlayCircle size={20} />
+                  {videos.length > 0 ? 'Start Watching' : 'Go to My Learning'}
+                </Button>
+
+                <ul className={styles.features}>
+                  <li>{videos.length} video lessons</li>
+                  {course.duration_hours != null && course.duration_hours > 0 && (
+                    <li>{formatDuration(course.duration_hours)} of content</li>
+                  )}
+                  <li>Full access to all videos</li>
+                  <li>Mobile friendly</li>
+                </ul>
+              </>
+            ) : (
+              /* ---- NOT ENROLLED STATE ---- */
+              <>
+                {course.is_free ? (
+                  <div className={styles.priceSection}>
+                    <span className={styles.priceFree}>Free</span>
+                  </div>
+                ) : (
+                  <>
+                    <fieldset className={styles.planFieldset}>
+                      <legend className={styles.planLegend}>Plan Options &amp; Accessibility</legend>
+                      <p className={styles.planIntro}>
+                        Choose a duration and whether you want diet guidance included. The same options apply to every course.
+                      </p>
+                      {groupedPricingPlans().map((group) => (
+                        <div key={group.title} className={styles.planGroup}>
+                          <div className={styles.planGroupTitle}>{group.title}</div>
+                          <div className={styles.planOptions}>
+                            {group.plans.map((plan) => {
+                              const active = selectedPlanCode === plan.code;
+                              return (
+                                <label
+                                  key={plan.code}
+                                  className={`${styles.planOption} ${active ? styles.planOptionActive : ''}`}
+                                >
+                                  <input
+                                    type="radio"
+                                    name="pricing-plan"
+                                    value={plan.code}
+                                    checked={active}
+                                    onChange={() => setSelectedPlanCode(plan.code)}
+                                  />
+                                  <span className={styles.planOptionBody}>
+                                    <span className={styles.planOptionLabel}>{plan.option}</span>
+                                    <span className={styles.planOptionPrice}>
+                                      {formatOriginalPrice(plan.amount)}
+                                    </span>
+                                  </span>
+                                </label>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                    </fieldset>
+                    <div className={styles.priceSection}>
+                      <span className={styles.selectedPlanSummary}>Selected</span>
+                      <span className={styles.priceCurrent}>{formatOriginalPrice(selectedPlan.amount)}</span>
+                    </div>
+                  </>
+                )}
+
+                <Button
+                  variant="primary"
+                  size="lg"
+                  fullWidth
+                  onClick={handleBuy}
+                  isLoading={purchasing}
+                >
+                  {!isAuthenticated
+                    ? 'Login to Enroll'
+                    : course.is_free
+                      ? 'Enroll for Free'
+                      : `Pay ${formatOriginalPrice(selectedPlan.amount)}`
+                  }
+                </Button>
+
+                <ul className={styles.features}>
+                  <li>{videos.length} video lessons</li>
+                  {course.duration_hours != null && course.duration_hours > 0 && (
+                    <li>{formatDuration(course.duration_hours)} of content</li>
+                  )}
+                  {!course.is_free && <li>Access for your selected plan period</li>}
+                  {course.is_free && <li>Full access while enrolled</li>}
+                  <li>Mobile friendly</li>
+                </ul>
               </>
             )}
-
-            {is_enrolled ? (
-              <Button variant="primary" size="lg" fullWidth onClick={() => navigate(ROUTES.MY_LEARNING)}>
-                <HiOutlineAcademicCap size={20} />
-                Continue Learning
-              </Button>
-            ) : (
-              <Button
-                variant="primary"
-                size="lg"
-                fullWidth
-                onClick={handleBuy}
-                isLoading={purchasing}
-              >
-                {!isAuthenticated
-                  ? 'Login to Enroll'
-                  : course.is_free
-                    ? 'Enroll for Free'
-                    : `Pay ${formatOriginalPrice(selectedPlan.amount)}`
-                }
-              </Button>
-            )}
-
-            <ul className={styles.features}>
-              <li>{videos.length} video lessons</li>
-              {course.duration_hours != null && course.duration_hours > 0 && (
-                <li>{formatDuration(course.duration_hours)} of content</li>
-              )}
-              {!course.is_free && <li>Access for your selected plan period</li>}
-              {course.is_free && <li>Full access while enrolled</li>}
-              <li>Mobile friendly</li>
-            </ul>
           </div>
         </aside>
       </div>

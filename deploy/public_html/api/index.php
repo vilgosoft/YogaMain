@@ -128,6 +128,9 @@ $router->get('/courses',          [$courseController, 'index']);
 $router->get('/categories',       [$courseController, 'categories']);
 $router->get('/courses/:slug',    [$courseController, 'show']);
 
+// Video access (enrolled users)
+$router->get('/videos/:id',      [$courseController, 'getVideo']);
+
 // =============================================
 // User Dashboard
 // =============================================
