@@ -5,11 +5,9 @@ export function ConnectionBanner() {
   const [status, setStatus] = useState<'ok' | 'api-down' | 'db-down'>('ok');
 
   useEffect(() => {
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
-
     async function checkHealth() {
       try {
-        const res = await fetch(`${apiUrl}/health`, { signal: AbortSignal.timeout(3000) });
+        const res = await fetch('/api/health', { signal: AbortSignal.timeout(3000) });
         if (!res.ok) {
           const data = await res.json().catch(() => null);
           if (data?.data?.api && !data?.data?.database) {
@@ -18,7 +16,7 @@ export function ConnectionBanner() {
             setStatus('api-down');
           }
         } else {
-          setStatus('ok');
+          setStatus((prev) => prev !== 'ok' ? 'ok' : prev);
         }
       } catch {
         setStatus('api-down');
@@ -38,15 +36,15 @@ export function ConnectionBanner() {
         {status === 'db-down' ? (
           <>
             <strong>MySQL is not running.</strong> Open{' '}
-            <strong>XAMPP Control Panel</strong> and click <strong>Start</strong> next
-            to MySQL, then refresh this page.
+            <strong>XAMPP Control Panel</strong> and click{' '}
+            <strong>Start</strong> next to MySQL. This page will
+            reconnect automatically.
           </>
         ) : (
           <>
-            <strong>Cannot reach the backend server.</strong> Make sure the PHP
-            server is running on port 8000. Open a terminal in the{' '}
-            <code>backend</code> folder and run:{' '}
-            <code>php -S localhost:8000 -t public</code>
+            <strong>Cannot connect to the server.</strong> Please
+            double-click <code>start.bat</code> in the project folder to
+            start all services. This page will reconnect automatically.
           </>
         )}
       </div>

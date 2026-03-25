@@ -16,7 +16,8 @@ export function getAccessToken(): string | null {
   return accessToken;
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+// Use relative URL so requests go through Vite's dev proxy (no CORS issues)
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 const client = axios.create({
   baseURL: API_BASE_URL,
