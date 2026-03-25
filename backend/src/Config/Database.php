@@ -36,8 +36,20 @@ class Database
                 $errorMsg = 'Database connection failed';
                 if (($_ENV['APP_ENV'] ?? 'production') === 'development') {
                     $errorMsg .= ': ' . $e->getMessage();
+                    if (str_contains($e->getMessage(), 'refused') || str_contains($e->getMessage(), '2002')) {
+                        $errorMsg .= '. Please ensure MySQL is running (start via XAMPP/WAMP or run: net start mysql)';
+                    }
                 }
-                echo json_encode(['success' => false, 'error' => ['message' => $errorMsg]]);
+
+                // Set CORS headers so browser can read the error
+                $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+                if (preg_match('#^https?://localhost(:\d+)?$#', $origin)) {
+                    header("Access-Control-Allow-Origin: {$origin}");
+                    header('Access-Control-Allow-Credentials: true');
+                }
+                header('Content-Type: application/json');
+
+                echo json_encode(['success' => false, 'error' => ['code' => 'DB_CONNECTION', 'message' => $errorMsg]]);
                 exit;
             }
         }
