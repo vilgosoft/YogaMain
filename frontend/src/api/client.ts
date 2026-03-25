@@ -1,7 +1,32 @@
 import axios from 'axios';
 import type { ApiResponse } from '@/types/api.types';
+import type { AuthResponse } from '@/types/auth.types';
 
 let accessToken: string | null = null;
+
+/** One in-flight refresh for the whole app — avoids double rotation (Strict Mode / parallel 401s). */
+let refreshInFlight: Promise<AuthResponse> | null = null;
+
+export function refreshSession(): Promise<AuthResponse> {
+  if (refreshInFlight) {
+    return refreshInFlight;
+  }
+  refreshInFlight = axios
+    .post<ApiResponse<AuthResponse>>('/api/auth/refresh', {}, { withCredentials: true })
+    .then((res) => {
+      const payload = res.data.data;
+      if (!payload?.access_token) {
+        throw new Error('Refresh failed');
+      }
+      setAccessToken(payload.access_token);
+      return payload;
+    })
+    .finally(() => {
+      refreshInFlight = null;
+    });
+  return refreshInFlight;
+}
+
 let isRefreshing = false;
 let failedQueue: Array<{
   resolve: (token: string) => void;
@@ -73,14 +98,7 @@ client.interceptors.response.use(
     isRefreshing = true;
 
     try {
-      const { data } = await axios.post<ApiResponse<{ access_token: string }>>(
-        '/api/auth/refresh',
-        {},
-        { withCredentials: true }
-      );
-
-      const newToken = data.data?.access_token ?? '';
-      setAccessToken(newToken);
+      const { access_token: newToken } = await refreshSession();
 
       failedQueue.forEach(({ resolve }) => resolve(newToken));
       failedQueue = [];

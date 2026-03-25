@@ -52,7 +52,11 @@ export function CoursesPage() {
     },
     { key: 'title', header: 'Title' },
     { key: 'category_name', header: 'Category' },
-    { key: 'price', header: 'Price', render: (r) => r.is_free ? 'Free' : `₹${r.price}` },
+    {
+      key: 'price',
+      header: 'Price',
+      render: (r) => (r.is_free ? 'Free' : 'Plans ₹3k–₹5.5k'),
+    },
     { key: 'video_count', header: 'Videos', render: (r) => String(r.video_count ?? 0) },
     {
       key: 'is_published', header: 'Status',

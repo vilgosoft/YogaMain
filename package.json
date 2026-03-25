@@ -1,7 +1,7 @@
 {
   "name": "yogamain",
   "private": true,
-  "description": "Yoga LMS — run scripts from repo root or from frontend/",
+  "description": "Sai ishani Yogashala — run scripts from repo root or from frontend/",
   "scripts": {
     "install:frontend": "npm install --prefix frontend",
     "dev": "npm run dev --prefix frontend",

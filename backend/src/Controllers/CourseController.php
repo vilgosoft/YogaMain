@@ -86,4 +86,9 @@ class CourseController
         ]);
         Response::json($result['courses']);
     }
+
+    public function landingStats(): void
+    {
+        Response::json($this->courseModel->getLandingStats());
+    }
 }

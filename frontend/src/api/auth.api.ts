@@ -1,4 +1,4 @@
-import client from './client';
+import client, { refreshSession } from './client';
 import type { ApiResponse } from '@/types/api.types';
 import type { AuthResponse, LoginRequest, RegisterRequest, User } from '@/types/auth.types';
 
@@ -13,8 +13,7 @@ export async function register(data: RegisterRequest): Promise<AuthResponse> {
 }
 
 export async function refreshToken(): Promise<AuthResponse> {
-  const res = await client.post<ApiResponse<AuthResponse>>('/auth/refresh');
-  return res.data.data!;
+  return refreshSession();
 }
 
 export async function logout(): Promise<void> {

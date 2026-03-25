@@ -1,19 +1,23 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { HiOutlineAcademicCap, HiOutlineUsers, HiOutlinePlayCircle, HiOutlineClock } from 'react-icons/hi2';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/Button/Button';
 import { CourseGrid } from '@/components/course/CourseGrid/CourseGrid';
-import { getFeaturedCourses } from '@/api/courses.api';
+import { getFeaturedCourses, getLandingStats, type LandingStats } from '@/api/courses.api';
 import type { Course } from '@/types/course.types';
 import { ROUTES } from '@/utils/constants';
 import styles from './HomePage.module.scss';
 
-const stats = [
-  { icon: <HiOutlineUsers />, value: '500+', label: 'Total Users' },
-  { icon: <HiOutlineAcademicCap />, value: '50+', label: 'Yoga Courses' },
-  { icon: <HiOutlinePlayCircle />, value: '200+', label: 'Video Lessons' },
-  { icon: <HiOutlineClock />, value: '100+', label: 'Hours of Content' },
+const statDefs: Array<{
+  key: keyof LandingStats;
+  icon: ReactNode;
+  label: string;
+}> = [
+  { key: 'total_users', icon: <HiOutlineUsers />, label: 'Total Users' },
+  { key: 'total_courses', icon: <HiOutlineAcademicCap />, label: 'Yoga Courses' },
+  { key: 'total_videos', icon: <HiOutlinePlayCircle />, label: 'Video Lessons' },
+  { key: 'total_content_hours', icon: <HiOutlineClock />, label: 'Hours of Content' },
 ];
 
 const features = [
@@ -48,12 +52,19 @@ export function HomePage() {
   const { isAuthenticated } = useAuth();
   const [featuredCourses, setFeaturedCourses] = useState<Course[]>([]);
   const [featuredLoading, setFeaturedLoading] = useState(true);
+  const [landingStats, setLandingStats] = useState<LandingStats | null>(null);
 
   useEffect(() => {
     getFeaturedCourses()
       .then(setFeaturedCourses)
       .catch(() => {})
       .finally(() => setFeaturedLoading(false));
+  }, []);
+
+  useEffect(() => {
+    getLandingStats()
+      .then(setLandingStats)
+      .catch(() => {});
   }, []);
 
   return (
@@ -85,11 +96,15 @@ export function HomePage() {
 
         {/* Stats */}
         <div className={styles.stats}>
-          {stats.map((stat) => (
+          {statDefs.map((stat) => (
             <div key={stat.label} className={styles.statItem}>
               <span className={styles.statIcon}>{stat.icon}</span>
               <div>
-                <span className={styles.statValue}>{stat.value}</span>
+                <span className={styles.statValue}>
+                  {landingStats != null
+                    ? landingStats[stat.key].toLocaleString('en-IN')
+                    : '—'}
+                </span>
                 <span className={styles.statLabel}>{stat.label}</span>
               </div>
             </div>
@@ -101,7 +116,7 @@ export function HomePage() {
       <section className={styles.features}>
         <div className={styles.featuresHeader}>
           <h2>
-            Why Choose <span className={styles.heroGradient}>YogaLMS</span>
+            Why Choose <span className={styles.heroGradient}>Sai ishani Yogashala</span>
           </h2>
           <p>Everything you need to build a sustainable yoga practice.</p>
         </div>

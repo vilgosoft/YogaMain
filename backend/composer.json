@@ -1,6 +1,6 @@
 {
     "name": "yogalms/backend",
-    "description": "Yoga LMS Backend API",
+    "description": "Sai ishani Yogashala Backend API",
     "type": "project",
     "require": {
         "php": ">=8.0",

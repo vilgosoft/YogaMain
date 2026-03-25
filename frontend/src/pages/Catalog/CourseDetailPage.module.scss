@@ -213,10 +213,107 @@
   gap: $space-4;
 }
 
+.planFieldset {
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  padding: $space-4;
+  margin: 0;
+  @include flex-col;
+  gap: $space-4;
+}
+
+.planLegend {
+  padding: 0 $space-2;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text;
+}
+
+.planIntro {
+  margin: (-$space-2) 0 0;
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+  line-height: $line-height-relaxed;
+}
+
+.planGroup {
+  @include flex-col;
+  gap: $space-2;
+}
+
+.planGroupTitle {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.planOptions {
+  @include flex-col;
+  gap: $space-2;
+}
+
+.planOption {
+  display: flex;
+  align-items: flex-start;
+  gap: $space-3;
+  padding: $space-3 $space-3;
+  border-radius: $radius-md;
+  border: 1px solid $color-border;
+  cursor: pointer;
+  transition: border-color $transition-fast, background $transition-fast;
+
+  input {
+    margin-top: 3px;
+    accent-color: $color-primary;
+  }
+
+  &:hover {
+    border-color: $color-border-light;
+    background: $color-bg-alt;
+  }
+}
+
+.planOptionActive {
+  border-color: rgba($color-primary, 0.5);
+  background: rgba($color-primary, 0.08);
+}
+
+.planOptionBody {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-3;
+  min-width: 0;
+}
+
+.planOptionLabel {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.planOptionPrice {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text;
+  flex-shrink: 0;
+}
+
 .priceSection {
   display: flex;
-  align-items: baseline;
-  gap: $space-3;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: $space-1;
+}
+
+.selectedPlanSummary {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .priceCurrent {

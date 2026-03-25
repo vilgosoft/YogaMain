@@ -7,8 +7,15 @@ import { useToast } from '@/components/ui/Toast/Toast';
 import { Button } from '@/components/ui/Button/Button';
 import { Spinner } from '@/components/ui/Spinner/Spinner';
 import { PageWrapper } from '@/components/layout/PageWrapper/PageWrapper';
-import { formatPrice, formatOriginalPrice, formatDuration, formatVideoTime } from '@/utils/formatters';
+import { formatOriginalPrice, formatDuration, formatVideoTime } from '@/utils/formatters';
+import {
+  DEFAULT_PLAN_CODE,
+  groupedPricingPlans,
+  getPlanByCode,
+  type PlanCode,
+} from '@/utils/pricingPlans';
 import { ROUTES } from '@/utils/constants';
+import { getApiErrorMessage } from '@/utils/apiErrors';
 import {
   HiOutlineClock,
   HiOutlineFilm,
@@ -28,6 +35,11 @@ export function CourseDetailPage() {
   const [data, setData] = useState<CourseDetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState(false);
+  const [selectedPlanCode, setSelectedPlanCode] = useState<PlanCode>(DEFAULT_PLAN_CODE);
+
+  useEffect(() => {
+    setSelectedPlanCode(DEFAULT_PLAN_CODE);
+  }, [slug]);
 
   useEffect(() => {
     if (!slug) return;
@@ -51,7 +63,10 @@ export function CourseDetailPage() {
 
     setPurchasing(true);
     try {
-      const result = await initiatePayment(data.course.id);
+      const result = await initiatePayment(
+        data.course.id,
+        data.course.is_free ? undefined : selectedPlanCode
+      );
 
       if (data.course.is_free) {
         // Free courses are auto-enrolled on the backend
@@ -61,8 +76,8 @@ export function CourseDetailPage() {
         // Redirect to PhonePe payment page
         window.location.href = result.redirect_url;
       }
-    } catch {
-      showToast('error', 'Failed to initiate payment. Please try again.');
+    } catch (err) {
+      showToast('error', getApiErrorMessage(err, 'Failed to initiate payment. Please try again.'));
     } finally {
       setPurchasing(false);
     }
@@ -79,7 +94,7 @@ export function CourseDetailPage() {
   if (!data) return null;
 
   const { course, videos, is_enrolled } = data;
-  const hasDiscount = course.discount_price != null && course.discount_price > 0 && course.discount_price < course.price;
+  const selectedPlan = getPlanByCode(selectedPlanCode);
   const totalDuration = videos.reduce((sum, v) => sum + (v.duration_sec || 0), 0);
 
   return (
@@ -159,22 +174,54 @@ export function CourseDetailPage() {
         {/* Sidebar */}
         <aside className={styles.sidebar}>
           <div className={styles.priceCard}>
-            <div className={styles.priceSection}>
-              {course.is_free ? (
+            {course.is_free ? (
+              <div className={styles.priceSection}>
                 <span className={styles.priceFree}>Free</span>
-              ) : (
-                <>
-                  <span className={styles.priceCurrent}>
-                    {formatPrice(course.price, course.discount_price)}
-                  </span>
-                  {hasDiscount && (
-                    <span className={styles.priceOriginal}>
-                      {formatOriginalPrice(course.price)}
-                    </span>
-                  )}
-                </>
-              )}
-            </div>
+              </div>
+            ) : (
+              <>
+                <fieldset className={styles.planFieldset}>
+                  <legend className={styles.planLegend}>Plan Options &amp; Accessibility</legend>
+                  <p className={styles.planIntro}>
+                    Choose a duration and whether you want diet guidance included. The same options apply to every course.
+                  </p>
+                  {groupedPricingPlans().map((group) => (
+                    <div key={group.title} className={styles.planGroup}>
+                      <div className={styles.planGroupTitle}>{group.title}</div>
+                      <div className={styles.planOptions}>
+                        {group.plans.map((plan) => {
+                          const active = selectedPlanCode === plan.code;
+                          return (
+                            <label
+                              key={plan.code}
+                              className={`${styles.planOption} ${active ? styles.planOptionActive : ''}`}
+                            >
+                              <input
+                                type="radio"
+                                name="pricing-plan"
+                                value={plan.code}
+                                checked={active}
+                                onChange={() => setSelectedPlanCode(plan.code)}
+                              />
+                              <span className={styles.planOptionBody}>
+                                <span className={styles.planOptionLabel}>{plan.option}</span>
+                                <span className={styles.planOptionPrice}>
+                                  {formatOriginalPrice(plan.amount)}
+                                </span>
+                              </span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </fieldset>
+                <div className={styles.priceSection}>
+                  <span className={styles.selectedPlanSummary}>Selected</span>
+                  <span className={styles.priceCurrent}>{formatOriginalPrice(selectedPlan.amount)}</span>
+                </div>
+              </>
+            )}
 
             {is_enrolled ? (
               <Button variant="primary" size="lg" fullWidth onClick={() => navigate(ROUTES.MY_LEARNING)}>
@@ -193,7 +240,7 @@ export function CourseDetailPage() {
                   ? 'Login to Enroll'
                   : course.is_free
                     ? 'Enroll for Free'
-                    : `Buy Now ${formatPrice(course.price, course.discount_price)}`
+                    : `Pay ${formatOriginalPrice(selectedPlan.amount)}`
                 }
               </Button>
             )}
@@ -203,7 +250,8 @@ export function CourseDetailPage() {
               {course.duration_hours != null && course.duration_hours > 0 && (
                 <li>{formatDuration(course.duration_hours)} of content</li>
               )}
-              <li>Lifetime access</li>
+              {!course.is_free && <li>Access for your selected plan period</li>}
+              {course.is_free && <li>Full access while enrolled</li>}
               <li>Mobile friendly</li>
             </ul>
           </div>

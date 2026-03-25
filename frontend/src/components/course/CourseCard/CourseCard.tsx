@@ -1,5 +1,6 @@
 import type { Course } from '@/types/course.types';
-import { formatPrice, formatOriginalPrice, formatDuration } from '@/utils/formatters';
+import { formatOriginalPrice, formatDuration } from '@/utils/formatters';
+import { minPlanPrice } from '@/utils/pricingPlans';
 import { HiOutlineClock, HiOutlineFilm } from 'react-icons/hi2';
 import styles from './CourseCard.module.scss';
 
@@ -15,7 +16,7 @@ const difficultyColors: Record<string, string> = {
 };
 
 export function CourseCard({ course, onClick }: CourseCardProps) {
-  const hasDiscount = course.discount_price != null && course.discount_price > 0 && course.discount_price < course.price;
+  const fromPriceLabel = `From ${formatOriginalPrice(minPlanPrice())}`;
 
   return (
     <article className={styles.card} onClick={onClick} role="button" tabIndex={0}>
@@ -61,16 +62,10 @@ export function CourseCard({ course, onClick }: CourseCardProps) {
             {course.is_free ? (
               <span className={styles.free}>Free</span>
             ) : (
-              <>
-                <span className={styles.current}>
-                  {formatPrice(course.price, course.discount_price)}
-                </span>
-                {hasDiscount && (
-                  <span className={styles.original}>
-                    {formatOriginalPrice(course.price)}
-                  </span>
-                )}
-              </>
+              <div className={styles.paidPlans}>
+                <span className={styles.current}>{fromPriceLabel}</span>
+                <span className={styles.planNote}>3-month &amp; 1-year options</span>
+              </div>
             )}
           </div>
         </div>

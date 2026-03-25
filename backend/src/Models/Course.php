@@ -166,4 +166,28 @@ class Course
 
         return $stats;
     }
+
+    /** Public counts for marketing / home page (no auth). */
+    public function getLandingStats(): array
+    {
+        $stmt = $this->db->query('SELECT COUNT(*) FROM users WHERE role = "user"');
+        $totalUsers = (int) $stmt->fetchColumn();
+
+        $stmt = $this->db->query('SELECT COUNT(*) FROM courses WHERE is_published = 1');
+        $totalCourses = (int) $stmt->fetchColumn();
+
+        $stmt = $this->db->query('SELECT COUNT(*) FROM videos');
+        $totalVideos = (int) $stmt->fetchColumn();
+
+        $stmt = $this->db->query('SELECT COALESCE(SUM(duration_sec), 0) FROM videos');
+        $totalSec = (int) $stmt->fetchColumn();
+        $totalHours = (int) round($totalSec / 3600);
+
+        return [
+            'total_users'          => $totalUsers,
+            'total_courses'        => $totalCourses,
+            'total_videos'         => $totalVideos,
+            'total_content_hours'  => $totalHours,
+        ];
+    }
 }

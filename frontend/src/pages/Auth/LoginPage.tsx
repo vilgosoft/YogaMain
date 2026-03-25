@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { HiOutlineEnvelope, HiOutlineLockClosed } from 'react-icons/hi2';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/components/ui/Toast/Toast';
@@ -13,6 +13,8 @@ export function LoginPage() {
   const { login } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
+  const fromPath = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname;
 
   const [form, setForm] = useState({ email: '', password: '' });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -33,9 +35,15 @@ export function LoginPage() {
 
     setLoading(true);
     try {
-      await login(form);
+      const userAfter = await login(form);
       showToast('success', 'Welcome back!');
-      navigate(ROUTES.MY_LEARNING);
+      if (userAfter.role === 'admin') {
+        navigate(ROUTES.ADMIN_DASHBOARD, { replace: true });
+      } else {
+        const dest =
+          fromPath && fromPath !== ROUTES.LOGIN ? fromPath : ROUTES.MY_LEARNING;
+        navigate(dest, { replace: true });
+      }
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message ||

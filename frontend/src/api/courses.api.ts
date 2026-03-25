@@ -18,6 +18,18 @@ export async function getFeaturedCourses(): Promise<Course[]> {
   return res.data.data!;
 }
 
+export interface LandingStats {
+  total_users: number;
+  total_courses: number;
+  total_videos: number;
+  total_content_hours: number;
+}
+
+export async function getLandingStats(): Promise<LandingStats> {
+  const res = await client.get<ApiResponse<LandingStats>>('/stats/landing');
+  return res.data.data!;
+}
+
 // Course detail
 export interface CourseDetailResponse {
   course: Course;

@@ -1,4 +1,4 @@
--- Yoga LMS Database Schema
+-- Sai ishani Yogashala Database Schema
 -- Run this SQL against your MySQL database to create all tables
 
 CREATE DATABASE IF NOT EXISTS yoga_lms
@@ -127,6 +127,7 @@ CREATE TABLE transactions (
     id                  INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     user_id             INT UNSIGNED    NOT NULL,
     course_id           INT UNSIGNED    NOT NULL,
+    plan_code           VARCHAR(40)     NULL,
     merchant_txn_id     VARCHAR(100)    NOT NULL UNIQUE,
     phonepe_txn_id      VARCHAR(100)    NULL,
     amount              DECIMAL(10,2)   NOT NULL,

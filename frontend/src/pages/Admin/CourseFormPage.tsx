@@ -175,6 +175,9 @@ export function CourseFormPage() {
           <Input label="Price (₹)" type="number" value={form.price} onChange={set('price')} min="0" step="0.01" />
           <Input label="Discount Price (₹)" type="number" value={form.discount_price} onChange={set('discount_price')} min="0" step="0.01" placeholder="Optional" />
         </div>
+        <p style={{ ...labelMuted, margin: '-0.5rem 0 0', fontSize: '0.8125rem', lineHeight: 1.45 }}>
+          Checkout uses fixed plans for all paid courses: 3-month (₹3,000 / ₹3,500 with diet) and 1-year (₹5,000 / ₹5,500 with diet). Price fields above are optional for internal reference.
+        </p>
 
         <div className={styles.formRow}>
           <Input label="Duration (hours)" type="number" value={form.duration_hours} onChange={set('duration_hours')} min="0" step="0.1" placeholder="e.g., 10.5" />

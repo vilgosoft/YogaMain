@@ -7,6 +7,7 @@ use App\Models\Course;
 use App\Models\Enrollment;
 use App\Config\Database;
 use App\Services\PhonePeService;
+use App\Config\PricingPlans;
 use PDO;
 
 class PaymentController
@@ -52,40 +53,107 @@ class PaymentController
             return;
         }
 
-        $amount = $course['discount_price'] ?? $course['price'];
+        if (!$this->phonePe->isConfigured()) {
+            Response::error(
+                'Payment gateway is not configured. Set PHONEPE_AUTH_TOKEN (Standard Checkout v2) or PHONEPE_MERCHANT_ID and PHONEPE_SALT_KEY (classic) in backend/.env.',
+                'PAYMENT_NOT_CONFIGURED',
+                503
+            );
+        }
+
+        $planCode = isset($data['plan_code']) ? trim((string) $data['plan_code']) : '';
+        if ($planCode === '' || !PricingPlans::isValidCode($planCode)) {
+            Response::error('Valid plan_code is required for paid courses', 'VALIDATION_ERROR', 422);
+        }
+
+        $amount = PricingPlans::amountFor($planCode);
+        if ($amount === null) {
+            Response::error('Invalid plan', 'VALIDATION_ERROR', 422);
+        }
+
         $merchantTxnId = 'YOGA_' . $userId . '_' . $courseId . '_' . time();
 
-        // Create transaction record
-        $stmt = $this->db->prepare(
-            'INSERT INTO transactions (user_id, course_id, merchant_txn_id, amount, status)
-             VALUES (:user_id, :course_id, :merchant_txn_id, :amount, :status)'
+        $this->insertTransactionWithOptionalPlanColumn(
+            $userId,
+            $courseId,
+            $planCode,
+            $merchantTxnId,
+            $amount
         );
-        $stmt->execute([
-            'user_id'         => $userId,
-            'course_id'       => $courseId,
-            'merchant_txn_id' => $merchantTxnId,
-            'amount'          => $amount,
-            'status'          => 'initiated',
-        ]);
 
-        // Initiate PhonePe payment
-        $result = $this->phonePe->initiatePayment($merchantTxnId, $userId, (float) $amount, $courseId);
+        $result = $this->phonePe->initiatePayment($merchantTxnId, $userId, $amount, $courseId);
+        $redirectUrl = PhonePeService::extractRedirectUrl($result);
 
-        if (!empty($result['success']) && !empty($result['data']['instrumentResponse']['redirectInfo']['url'])) {
+        if ($redirectUrl !== null && $redirectUrl !== '') {
             Response::json([
-                'redirect_url'    => $result['data']['instrumentResponse']['redirectInfo']['url'],
+                'redirect_url'    => $redirectUrl,
                 'merchant_txn_id' => $merchantTxnId,
             ]);
-        } else {
-            // Update transaction as failed
-            $stmt = $this->db->prepare('UPDATE transactions SET status = "failed" WHERE merchant_txn_id = :txn');
-            $stmt->execute(['txn' => $merchantTxnId]);
+        }
 
+        $stmt = $this->db->prepare('UPDATE transactions SET status = "failed" WHERE merchant_txn_id = :txn');
+        $stmt->execute(['txn' => $merchantTxnId]);
+
+        $isDev = ($_ENV['APP_ENV'] ?? 'production') === 'development';
+        $detail = PhonePeService::summarizeFailure($result);
+        if ($isDev) {
+            error_log('PhonePe initiate failed: ' . json_encode($result, JSON_UNESCAPED_UNICODE));
             Response::error(
-                'Payment initiation failed. Please try again.',
+                "Payment gateway error: {$detail}",
                 'PAYMENT_FAILED',
                 500
             );
+        }
+
+        Response::error(
+            'Payment initiation failed. Please try again.',
+            'PAYMENT_FAILED',
+            500
+        );
+    }
+
+    /**
+     * @throws \PDOException
+     */
+    private function insertTransactionWithOptionalPlanColumn(
+        int $userId,
+        int $courseId,
+        string $planCode,
+        string $merchantTxnId,
+        float $amount
+    ): void {
+        try {
+            $stmt = $this->db->prepare(
+                'INSERT INTO transactions (user_id, course_id, plan_code, merchant_txn_id, amount, status)
+                 VALUES (:user_id, :course_id, :plan_code, :merchant_txn_id, :amount, :status)'
+            );
+            $stmt->execute([
+                'user_id'         => $userId,
+                'course_id'       => $courseId,
+                'plan_code'       => $planCode,
+                'merchant_txn_id' => $merchantTxnId,
+                'amount'          => $amount,
+                'status'          => 'initiated',
+            ]);
+        } catch (\PDOException $e) {
+            $driverCode = $e->errorInfo[1] ?? null;
+            $msg        = $e->getMessage();
+            if ($driverCode === 1054 || str_contains($msg, 'plan_code')) {
+                $stmt = $this->db->prepare(
+                    'INSERT INTO transactions (user_id, course_id, merchant_txn_id, amount, status)
+                     VALUES (:user_id, :course_id, :merchant_txn_id, :amount, :status)'
+                );
+                $stmt->execute([
+                    'user_id'         => $userId,
+                    'course_id'       => $courseId,
+                    'merchant_txn_id' => $merchantTxnId,
+                    'amount'          => $amount,
+                    'status'          => 'initiated',
+                ]);
+
+                return;
+            }
+            throw $e;
         }
     }
 

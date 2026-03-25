@@ -8,7 +8,7 @@ export interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   isAdmin: boolean;
-  login: (credentials: LoginRequest) => Promise<void>;
+  login: (credentials: LoginRequest) => Promise<User>;
   register: (data: RegisterRequest) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -40,6 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const data = await authApi.login(credentials);
     setAccessToken(data.access_token);
     setUser(data.user);
+    return data.user;
   }, []);
 
   const register = useCallback(async (regData: RegisterRequest) => {
