@@ -7,7 +7,7 @@ import { Modal } from '@/components/ui/Modal/Modal';
 import { Button } from '@/components/ui/Button/Button';
 import { Input } from '@/components/ui/Input/Input';
 import { Spinner } from '@/components/ui/Spinner/Spinner';
-import { useToast } from '@/components/ui/Toast/ToastContext';
+import { useToast } from '@/components/ui/Toast/Toast';
 import type { Video, Course } from '@/types/course.types';
 import styles from './AdminPage.module.scss';
 
@@ -121,7 +121,7 @@ export function VideosPage() {
 
   return (
     <div>
-      <Link to="/admin/courses" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', color: '#9CA3AF', marginBottom: '1rem', fontSize: '0.875rem' }}>
+      <Link to="/admin/courses" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-muted)', marginBottom: '1rem', fontSize: '0.875rem' }}>
         <HiOutlineArrowLeft /> Back to Courses
       </Link>
 
@@ -137,10 +137,10 @@ export function VideosPage() {
           <Input label="Title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required />
           <Input label="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Optional" />
           <div>
-            <label style={{ display: 'block', fontSize: '0.875rem', color: '#9CA3AF', marginBottom: '0.5rem' }}>Video File</label>
-            <input type="file" accept="video/*" onChange={(e) => setVideoFile(e.target.files?.[0] ?? null)} style={{ color: '#9CA3AF' }} />
+            <label style={{ display: 'block', fontSize: '0.875rem', color: 'var(--color-text-muted)', marginBottom: '0.5rem' }}>Video File</label>
+            <input type="file" accept="video/*" onChange={(e) => setVideoFile(e.target.files?.[0] ?? null)} style={{ color: 'var(--color-text-muted)' }} />
           </div>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#C4C7D4', fontSize: '0.875rem' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.875rem' }}>
             <input type="checkbox" checked={form.is_preview === '1'} onChange={(e) => setForm({ ...form, is_preview: e.target.checked ? '1' : '0' })} />
             Free Preview
           </label>

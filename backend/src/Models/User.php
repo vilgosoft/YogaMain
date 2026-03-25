@@ -16,8 +16,11 @@ class User
 
     public function findByEmail(string $email): ?array
     {
-        $stmt = $this->db->prepare('SELECT * FROM users WHERE email = :email LIMIT 1');
-        $stmt->execute(['email' => $email]);
+        $normalized = strtolower(trim($email));
+        $stmt = $this->db->prepare(
+            'SELECT * FROM users WHERE LOWER(TRIM(email)) = :email LIMIT 1'
+        );
+        $stmt->execute(['email' => $normalized]);
         $user = $stmt->fetch();
         return $user ?: null;
     }

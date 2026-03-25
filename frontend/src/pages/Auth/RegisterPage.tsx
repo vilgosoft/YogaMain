@@ -2,12 +2,11 @@ import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { HiOutlineUser, HiOutlineEnvelope, HiOutlinePhone, HiOutlineLockClosed } from 'react-icons/hi2';
 import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/components/ui/Toast/ToastContext';
+import { useToast } from '@/components/ui/Toast/Toast';
 import { Input } from '@/components/ui/Input/Input';
 import { Button } from '@/components/ui/Button/Button';
 import { ROUTES } from '@/utils/constants';
 import { isValidEmail, isValidPhone, isStrongPassword } from '@/utils/validators';
-import { getApiErrorDetails } from '@/utils/apiErrors';
 import styles from './AuthPage.module.scss';
 
 export function RegisterPage() {
@@ -26,15 +25,12 @@ export function RegisterPage() {
   const [loading, setLoading] = useState(false);
 
   const validate = (): boolean => {
-    const name = form.name.trim();
-    const email = form.email.trim().toLowerCase();
-    const phone = form.phone.trim();
     const errs: Record<string, string> = {};
-    if (!name || name.length < 2) errs.name = 'Name must be at least 2 characters';
-    if (!email) errs.email = 'Email is required';
-    else if (!isValidEmail(email)) errs.email = 'Invalid email address';
-    if (!phone) errs.phone = 'Phone number is required';
-    else if (!isValidPhone(phone)) errs.phone = 'Enter a valid 10-digit Indian phone number';
+    if (!form.name || form.name.length < 2) errs.name = 'Name must be at least 2 characters';
+    if (!form.email) errs.email = 'Email is required';
+    else if (!isValidEmail(form.email)) errs.email = 'Invalid email address';
+    if (!form.phone) errs.phone = 'Phone number is required';
+    else if (!isValidPhone(form.phone)) errs.phone = 'Enter a valid 10-digit Indian phone number';
     if (!form.password) errs.password = 'Password is required';
     else {
       const pwErr = isStrongPassword(form.password);
@@ -52,19 +48,20 @@ export function RegisterPage() {
     setLoading(true);
     try {
       await register({
-        name: form.name.trim(),
-        email: form.email.trim().toLowerCase(),
-        phone: form.phone.trim(),
+        name: form.name,
+        email: form.email,
+        phone: form.phone,
         password: form.password,
       });
       showToast('success', 'Account created successfully!');
       navigate(ROUTES.MY_LEARNING);
     } catch (err: unknown) {
-      const { message, fields } = getApiErrorDetails(err);
-      if (fields) {
-        setErrors((prev) => ({ ...prev, ...fields }));
+      const errorData = (err as { response?: { data?: { error?: { message?: string; fields?: Record<string, string> } } } })
+        ?.response?.data?.error;
+      if (errorData?.fields) {
+        setErrors(errorData.fields);
       }
-      showToast('error', message);
+      showToast('error', errorData?.message || 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -86,11 +83,7 @@ export function RegisterPage() {
             placeholder="Your full name"
             icon={<HiOutlineUser />}
             value={form.name}
-            onChange={(e) => {
-              const name = e.target.value;
-              setForm({ ...form, name });
-              setErrors((prev) => ({ ...prev, name: '' }));
-            }}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
             error={errors.name}
           />
 
@@ -101,11 +94,7 @@ export function RegisterPage() {
             placeholder="you@example.com"
             icon={<HiOutlineEnvelope />}
             value={form.email}
-            onChange={(e) => {
-              const email = e.target.value;
-              setForm({ ...form, email });
-              setErrors((prev) => ({ ...prev, email: '' }));
-            }}
+            onChange={(e) => setForm({ ...form, email: e.target.value })}
             error={errors.email}
           />
 
@@ -116,11 +105,7 @@ export function RegisterPage() {
             placeholder="9876543210"
             icon={<HiOutlinePhone />}
             value={form.phone}
-            onChange={(e) => {
-              const phone = e.target.value.replace(/\D/g, '').slice(0, 10);
-              setForm({ ...form, phone });
-              setErrors((prev) => ({ ...prev, phone: '' }));
-            }}
+            onChange={(e) => setForm({ ...form, phone: e.target.value })}
             error={errors.phone}
           />
 
@@ -131,11 +116,7 @@ export function RegisterPage() {
             placeholder="Min 8 characters"
             icon={<HiOutlineLockClosed />}
             value={form.password}
-            onChange={(e) => {
-              const password = e.target.value;
-              setForm({ ...form, password });
-              setErrors((prev) => ({ ...prev, password: '' }));
-            }}
+            onChange={(e) => setForm({ ...form, password: e.target.value })}
             error={errors.password}
           />
 
@@ -146,11 +127,7 @@ export function RegisterPage() {
             placeholder="Repeat your password"
             icon={<HiOutlineLockClosed />}
             value={form.confirmPassword}
-            onChange={(e) => {
-              const confirmPassword = e.target.value;
-              setForm({ ...form, confirmPassword });
-              setErrors((prev) => ({ ...prev, confirmPassword: '' }));
-            }}
+            onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
             error={errors.confirmPassword}
           />
 

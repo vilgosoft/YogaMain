@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { getCourseBySlug, type CourseDetailResponse } from '@/api/courses.api';
 import { initiatePayment } from '@/api/payments.api';
 import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/components/ui/Toast/ToastContext';
+import { useToast } from '@/components/ui/Toast/Toast';
 import { Button } from '@/components/ui/Button/Button';
 import { Spinner } from '@/components/ui/Spinner/Spinner';
 import { PageWrapper } from '@/components/layout/PageWrapper/PageWrapper';

@@ -39,7 +39,9 @@ class ValidationService
 
         switch ($rule) {
             case 'required':
-                if ($value === null || $value === '') {
+                $empty = $value === null || $value === ''
+                    || (is_string($value) && trim($value) === '');
+                if ($empty) {
                     return "{$label} is required";
                 }
                 break;
@@ -69,7 +71,8 @@ class ValidationService
                 break;
 
             case 'numeric':
-                if ($value && !is_numeric($value)) {
+                $v = is_string($value) ? trim($value) : $value;
+                if ($v !== null && $v !== '' && !is_numeric($v)) {
                     return "{$label} must be a number";
                 }
                 break;
@@ -81,7 +84,8 @@ class ValidationService
                 break;
 
             case 'slug':
-                if ($value && !preg_match('/^[a-z0-9]+(?:-[a-z0-9]+)*$/', $value)) {
+                $s = is_string($value) ? trim($value) : $value;
+                if ($s !== null && $s !== '' && !preg_match('/^[a-z0-9]+(?:-[a-z0-9]+)*$/', (string) $s)) {
                     return "{$label} must be a valid URL slug";
                 }
                 break;

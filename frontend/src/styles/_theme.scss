@@ -1,0 +1,57 @@
+// Light / dark tokens on <html data-theme="dark|light">.
+// Loaded before _variables.scss (see global.scss).
+
+:root,
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  --color-bg: #0b0d17;
+  --color-bg-alt: #0f1225;
+  --color-surface: #111427;
+  --color-surface-hover: #161a33;
+  --color-surface-light: #1a1e38;
+
+  --color-border: #1e2140;
+  --color-border-light: #2a2d4a;
+
+  --color-text: #ffffff;
+  --color-text-secondary: #c4c7d4;
+  --color-text-muted: #9ca3af;
+  --color-text-subtle: #6b7280;
+
+  --gradient-card: linear-gradient(145deg, #161a33, #111427);
+
+  --shadow-sm: 0 1px 3px rgb(0 0 0 / 0.35);
+  --shadow-md: 0 4px 12px rgb(0 0 0 / 0.45);
+  --shadow-lg: 0 8px 30px rgb(0 0 0 / 0.55);
+  --shadow-card: 0 2px 8px rgb(0 0 0 / 0.35);
+
+  --navbar-bg: color-mix(in srgb, var(--color-bg) 90%, transparent);
+}
+
+[data-theme='light'] {
+  color-scheme: light;
+
+  --color-bg: #f8fafc;
+  --color-bg-alt: #f1f5f9;
+  --color-surface: #ffffff;
+  --color-surface-hover: #f8fafc;
+  --color-surface-light: #e2e8f0;
+
+  --color-border: #e2e8f0;
+  --color-border-light: #cbd5e1;
+
+  --color-text: #0f172a;
+  --color-text-secondary: #475569;
+  --color-text-muted: #64748b;
+  --color-text-subtle: #94a3b8;
+
+  --gradient-card: linear-gradient(145deg, #ffffff, #f1f5f9);
+
+  --shadow-sm: 0 1px 2px rgb(15 23 42 / 0.06);
+  --shadow-md: 0 4px 12px rgb(15 23 42 / 0.08);
+  --shadow-lg: 0 12px 40px rgb(15 23 42 / 0.1);
+  --shadow-card: 0 1px 3px rgb(15 23 42 / 0.08);
+
+  --navbar-bg: color-mix(in srgb, var(--color-bg) 88%, transparent);
+}

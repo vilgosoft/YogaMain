@@ -1,39 +1,18 @@
 import axios from 'axios';
 
-type ErrorFieldMap = Record<string, string>;
-
-type ErrorResponseShape = {
-  error?: {
-    message?: string;
-    fields?: ErrorFieldMap;
-  };
-  message?: string;
-};
-
-export function getApiErrorDetails(error: unknown): { message: string; fields?: ErrorFieldMap } {
-  if (axios.isAxiosError<ErrorResponseShape>(error)) {
-    const responseData = error.response?.data;
-    const message =
-      responseData?.error?.message ||
-      responseData?.message ||
-      (error.code === 'ECONNABORTED'
-        ? 'The server took too long to respond. Please try again.'
-        : null) ||
-      (!error.response
-        ? 'Cannot reach the server right now. Please make sure the backend and database are running.'
-        : null) ||
-      error.message ||
-      'Something went wrong. Please try again.';
-
-    return {
-      message,
-      fields: responseData?.error?.fields,
-    };
+/** First human-readable message from an API error response, or fallback. */
+export function getApiErrorMessage(err: unknown, fallback: string): string {
+  if (axios.isAxiosError(err)) {
+    const data = err.response?.data as
+      | { error?: { message?: string; fields?: Record<string, string> } }
+      | undefined;
+    const fieldErrors = data?.error?.fields;
+    if (fieldErrors && typeof fieldErrors === 'object') {
+      const first = Object.values(fieldErrors).find((v) => typeof v === 'string');
+      if (first) return first;
+    }
+    const msg = data?.error?.message;
+    if (msg) return msg;
   }
-
-  if (error instanceof Error) {
-    return { message: error.message };
-  }
-
-  return { message: 'Something went wrong. Please try again.' };
+  return fallback;
 }

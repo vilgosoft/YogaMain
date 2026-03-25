@@ -42,16 +42,13 @@ export async function getAdminCourses(params?: Record<string, string | number>):
 }
 
 export async function createCourse(formData: FormData): Promise<Course> {
-  const res = await client.post<ApiResponse<Course>>('/admin/courses', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  });
+  // Do not set Content-Type — the browser/axios must add the multipart boundary.
+  const res = await client.post<ApiResponse<Course>>('/admin/courses', formData);
   return res.data.data!;
 }
 
 export async function updateCourse(id: number, formData: FormData): Promise<Course> {
-  const res = await client.put<ApiResponse<Course>>(`/admin/courses/${id}`, formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  });
+  const res = await client.post<ApiResponse<Course>>(`/admin/courses/${id}/update`, formData);
   return res.data.data!;
 }
 
@@ -66,9 +63,7 @@ export async function getCourseVideos(courseId: number): Promise<{ course: Cours
 }
 
 export async function uploadVideo(formData: FormData): Promise<Video> {
-  const res = await client.post<ApiResponse<Video>>('/admin/videos', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  });
+  const res = await client.post<ApiResponse<Video>>('/admin/videos', formData);
   return res.data.data!;
 }
 

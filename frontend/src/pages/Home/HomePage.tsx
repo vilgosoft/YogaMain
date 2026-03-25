@@ -51,10 +51,8 @@ export function HomePage() {
 
   useEffect(() => {
     getFeaturedCourses()
-      .then((courses) => setFeaturedCourses(Array.isArray(courses) ? courses : []))
-      .catch(() => {
-        setFeaturedCourses([]);
-      })
+      .then(setFeaturedCourses)
+      .catch(() => {})
       .finally(() => setFeaturedLoading(false));
   }, []);
 

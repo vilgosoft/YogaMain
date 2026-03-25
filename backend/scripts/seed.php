@@ -4,6 +4,8 @@
  * Database Seeder
  * Run: php scripts/seed.php
  * Creates an admin user and sample categories.
+ *
+ * If admin login fails: php scripts/ensure-admin.php (resets password + role).
  */
 
 require_once __DIR__ . '/../vendor/autoload.php';

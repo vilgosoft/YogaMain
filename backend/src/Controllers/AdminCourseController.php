@@ -35,8 +35,9 @@ class AdminCourseController
 
     public function create(): void
     {
-        // Handle multipart form data
-        $data = $_POST;
+        $data = $this->trimPostStrings($_POST);
+        $title = $data['title'] ?? '';
+        $data['slug'] = $this->normalizeCourseSlug($data['slug'] ?? '', $title);
 
         $valid = $this->validator->validate($data, [
             'title'       => ['required', ['max', 255]],
@@ -84,7 +85,12 @@ class AdminCourseController
             Response::error('Course not found', 'NOT_FOUND', 404);
         }
 
-        $data = $_POST;
+        $data = $this->trimPostStrings($_POST);
+        if (array_key_exists('slug', $data) || array_key_exists('title', $data)) {
+            $title = $data['title'] ?? $course['title'];
+            $slugIn = $data['slug'] ?? ($course['slug'] ?? '');
+            $data['slug'] = $this->normalizeCourseSlug($slugIn, (string) $title);
+        }
 
         // Handle thumbnail upload
         if (!empty($_FILES['thumbnail']) && $_FILES['thumbnail']['error'] === UPLOAD_ERR_OK) {
@@ -130,5 +136,40 @@ class AdminCourseController
     {
         $stats = $this->model->getStats();
         Response::json($stats);
+    }
+
+    /** @param array<string, mixed> $post */
+    private function trimPostStrings(array $post): array
+    {
+        $out = [];
+        foreach ($post as $k => $v) {
+            $out[$k] = is_string($v) ? trim($v) : $v;
+        }
+        return $out;
+    }
+
+    private function slugFromTitle(string $title): string
+    {
+        $s = strtolower(trim($title));
+        $s = preg_replace('/\s+/u', '-', $s);
+        $s = preg_replace('/[^a-z0-9\-]+/u', '-', $s);
+        $s = preg_replace('/-+/', '-', $s);
+        $s = trim($s, '-');
+
+        return $s !== '' ? $s : 'course';
+    }
+
+    private function normalizeCourseSlug(string $slug, string $title): string
+    {
+        $s = strtolower(trim($slug));
+        if ($s === '') {
+            return $this->slugFromTitle($title);
+        }
+        $s = preg_replace('/\s+/u', '-', $s);
+        $s = preg_replace('/[^a-z0-9\-]+/u', '-', $s);
+        $s = preg_replace('/-+/', '-', $s);
+        $s = trim($s, '-');
+
+        return $s !== '' ? $s : $this->slugFromTitle($title);
     }
 }

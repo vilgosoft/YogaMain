@@ -1,0 +1,22 @@
+# Optional: MySQL for local dev when you don't use XAMPP/WAMP.
+# From repo root: docker compose up -d
+# Then in backend/.env: DB_HOST=127.0.0.1 DB_PORT=3306 DB_USER=yoga DB_PASS=yoga_secret DB_NAME=yoga_lms
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: yogamain-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root_secret
+      MYSQL_DATABASE: yoga_lms
+      MYSQL_USER: yoga
+      MYSQL_PASSWORD: yoga_secret
+    ports:
+      - "3306:3306"
+    volumes:
+      - yogamain_mysql_data:/var/lib/mysql
+      - ./backend/migrations/001_initial_schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+
+volumes:
+  yogamain_mysql_data:

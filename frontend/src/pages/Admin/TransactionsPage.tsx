@@ -55,13 +55,17 @@ export function TransactionsPage() {
 
       <div className={styles.filters}>
         <div className={styles.filterGroup}>
-          <label style={{ fontSize: '0.875rem', color: '#9CA3AF' }}>Status:</label>
+          <label style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>Status:</label>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
             style={{
-              padding: '0.5rem 0.75rem', background: '#111427', border: '1px solid #1E2140',
-              borderRadius: 8, color: '#fff', fontSize: '0.875rem',
+              padding: '0.5rem 0.75rem',
+              background: 'var(--color-surface)',
+              border: '1px solid var(--color-border)',
+              borderRadius: 8,
+              color: 'var(--color-text)',
+              fontSize: '0.875rem',
             }}
           >
             <option value="">All</option>

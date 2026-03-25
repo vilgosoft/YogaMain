@@ -6,7 +6,7 @@ import { DataTable, type Column } from '@/components/ui/DataTable/DataTable';
 import { Pagination } from '@/components/ui/Pagination/Pagination';
 import { Button } from '@/components/ui/Button/Button';
 import { Input } from '@/components/ui/Input/Input';
-import { useToast } from '@/components/ui/Toast/ToastContext';
+import { useToast } from '@/components/ui/Toast/Toast';
 import type { PaginationMeta } from '@/types/api.types';
 import type { Course } from '@/types/course.types';
 import styles from './AdminPage.module.scss';

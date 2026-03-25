@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type CSSProperties } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getCategories, createCourse, updateCourse } from '@/api/admin.api';
 import client from '@/api/client';
+import { getApiErrorMessage } from '@/utils/apiErrors';
 import { Button } from '@/components/ui/Button/Button';
 import { Input } from '@/components/ui/Input/Input';
 import { Spinner } from '@/components/ui/Spinner/Spinner';
-import { useToast } from '@/components/ui/Toast/ToastContext';
+import { useToast } from '@/components/ui/Toast/Toast';
 import type { ApiResponse } from '@/types/api.types';
 import type { Category, Course } from '@/types/course.types';
 import styles from './AdminPage.module.scss';
@@ -53,6 +54,17 @@ export function CourseFormPage() {
     load();
   }, [id, isEdit]);
 
+  const slugFromTitle = (title: string) => {
+    const s = title
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9-]/g, '')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
+    return s || 'course';
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
@@ -60,8 +72,8 @@ export function CourseFormPage() {
     try {
       const formData = new FormData();
       Object.entries(form).forEach(([key, val]) => formData.append(key, val));
-      if (!form.slug) {
-        formData.set('slug', form.title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''));
+      if (!form.slug.trim()) {
+        formData.set('slug', slugFromTitle(form.title));
       }
       if (thumbnail) formData.append('thumbnail', thumbnail);
 
@@ -74,8 +86,8 @@ export function CourseFormPage() {
       }
 
       navigate('/admin/courses');
-    } catch {
-      showToast('error', 'Failed to save course');
+    } catch (err: unknown) {
+      showToast('error', getApiErrorMessage(err, 'Failed to save course'));
     } finally {
       setSaving(false);
     }
@@ -86,9 +98,32 @@ export function CourseFormPage() {
   const set = (key: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
     setForm({ ...form, [key]: e.target.value });
 
+  const labelMuted: CSSProperties = {
+    display: 'block',
+    fontSize: '0.875rem',
+    color: 'var(--color-text-muted)',
+    marginBottom: '0.5rem',
+  };
+  const selectField: CSSProperties = {
+    width: '100%',
+    padding: '0.75rem 1rem',
+    background: 'var(--color-surface)',
+    border: '1px solid var(--color-border)',
+    borderRadius: 8,
+    color: 'var(--color-text)',
+    fontSize: '1rem',
+  };
+  const checkboxLabel: CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem',
+    color: 'var(--color-text-secondary)',
+    fontSize: '0.875rem',
+  };
+
   return (
     <div>
-      <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '1.5rem' }}>
+      <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '1.5rem', color: 'var(--color-text)' }}>
         {isEdit ? 'Edit Course' : 'New Course'}
       </h2>
 
@@ -98,29 +133,23 @@ export function CourseFormPage() {
 
         <div className={styles.formRow}>
           <div>
-            <label style={{ display: 'block', fontSize: '0.875rem', color: '#9CA3AF', marginBottom: '0.5rem' }}>Category</label>
+            <label style={labelMuted}>Category</label>
             <select
               value={form.category_id}
               onChange={set('category_id')}
               required
-              style={{
-                width: '100%', padding: '0.75rem 1rem', background: '#111427', border: '1px solid #1E2140',
-                borderRadius: 8, color: '#fff', fontSize: '1rem',
-              }}
+              style={selectField}
             >
               <option value="">Select category</option>
               {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </div>
           <div>
-            <label style={{ display: 'block', fontSize: '0.875rem', color: '#9CA3AF', marginBottom: '0.5rem' }}>Difficulty</label>
+            <label style={labelMuted}>Difficulty</label>
             <select
               value={form.difficulty}
               onChange={set('difficulty')}
-              style={{
-                width: '100%', padding: '0.75rem 1rem', background: '#111427', border: '1px solid #1E2140',
-                borderRadius: 8, color: '#fff', fontSize: '1rem',
-              }}
+              style={selectField}
             >
               <option value="beginner">Beginner</option>
               <option value="intermediate">Intermediate</option>
@@ -132,16 +161,13 @@ export function CourseFormPage() {
         <Input label="Short Description" value={form.short_desc} onChange={set('short_desc')} placeholder="Brief overview (max 500 chars)" />
 
         <div>
-          <label style={{ display: 'block', fontSize: '0.875rem', color: '#9CA3AF', marginBottom: '0.5rem' }}>Description</label>
+          <label style={labelMuted}>Description</label>
           <textarea
             value={form.description}
             onChange={set('description')}
             rows={4}
             placeholder="Detailed course description"
-            style={{
-              width: '100%', padding: '0.75rem 1rem', background: '#111427', border: '1px solid #1E2140',
-              borderRadius: 8, color: '#fff', fontSize: '1rem', resize: 'vertical',
-            }}
+            style={{ ...selectField, resize: 'vertical' }}
           />
         </div>
 
@@ -156,21 +182,21 @@ export function CourseFormPage() {
         </div>
 
         <div>
-          <label style={{ display: 'block', fontSize: '0.875rem', color: '#9CA3AF', marginBottom: '0.5rem' }}>Thumbnail</label>
+          <label style={labelMuted}>Thumbnail</label>
           <input
             type="file"
             accept="image/*"
             onChange={(e) => setThumbnail(e.target.files?.[0] ?? null)}
-            style={{ color: '#9CA3AF', fontSize: '0.875rem' }}
+            style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}
           />
         </div>
 
         <div className={styles.formRow}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#C4C7D4', fontSize: '0.875rem' }}>
+          <label style={checkboxLabel}>
             <input type="checkbox" checked={form.is_published === '1'} onChange={(e) => setForm({ ...form, is_published: e.target.checked ? '1' : '0' })} />
             Published
           </label>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#C4C7D4', fontSize: '0.875rem' }}>
+          <label style={checkboxLabel}>
             <input type="checkbox" checked={form.is_free === '1'} onChange={(e) => setForm({ ...form, is_free: e.target.checked ? '1' : '0' })} />
             Free Course
           </label>

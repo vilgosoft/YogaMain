@@ -63,8 +63,8 @@ export function AppRoutes() {
       <Route
         path="*"
         element={
-          <div style={{ padding: '4rem', textAlign: 'center', color: '#9CA3AF' }}>
-            <h2>404 — Page Not Found</h2>
+          <div style={{ padding: '4rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>
+            <h2 style={{ color: 'var(--color-text)', marginBottom: '0.5rem' }}>404 — Page Not Found</h2>
           </div>
         }
       />
