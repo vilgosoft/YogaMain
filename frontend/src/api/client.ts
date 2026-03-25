@@ -1,5 +1,6 @@
 import axios from 'axios';
 import type { ApiResponse } from '@/types/api.types';
+import { discoverApiBaseUrl, getApiBaseUrl } from './config';
 
 let accessToken: string | null = null;
 let isRefreshing = false;
@@ -16,19 +17,21 @@ export function getAccessToken(): string | null {
   return accessToken;
 }
 
-// Use relative URL so requests go through Vite's dev proxy (no CORS issues)
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
-
 const client = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: getApiBaseUrl(),
   withCredentials: true,
+  timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
 // Attach JWT to every request
-client.interceptors.request.use((config) => {
+client.interceptors.request.use(async (config) => {
+  const baseUrl = await discoverApiBaseUrl();
+  if (baseUrl) {
+    config.baseURL = baseUrl;
+  }
   if (accessToken) {
     config.headers.Authorization = `Bearer ${accessToken}`;
   }
@@ -63,8 +66,9 @@ client.interceptors.response.use(
     isRefreshing = true;
 
     try {
+      const refreshUrl = `${(await discoverApiBaseUrl()) ?? getApiBaseUrl()}/auth/refresh`;
       const { data } = await axios.post<ApiResponse<{ access_token: string }>>(
-        `${API_BASE_URL}/auth/refresh`,
+        refreshUrl,
         {},
         { withCredentials: true }
       );
@@ -81,7 +85,9 @@ client.interceptors.response.use(
       failedQueue.forEach(({ reject }) => reject(refreshError));
       failedQueue = [];
       setAccessToken(null);
-      window.location.href = '/login';
+      if (axios.isAxiosError(refreshError) && refreshError.response?.status === 401) {
+        window.location.href = '/login';
+      }
       return Promise.reject(refreshError);
     } finally {
       isRefreshing = false;

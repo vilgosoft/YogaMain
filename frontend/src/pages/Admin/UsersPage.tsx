@@ -3,7 +3,7 @@ import { getAdminUsers, updateUser } from '@/api/admin.api';
 import { DataTable, type Column } from '@/components/ui/DataTable/DataTable';
 import { Pagination } from '@/components/ui/Pagination/Pagination';
 import { Input } from '@/components/ui/Input/Input';
-import { useToast } from '@/components/ui/Toast/Toast';
+import { useToast } from '@/components/ui/Toast/ToastContext';
 import type { PaginationMeta } from '@/types/api.types';
 import type { User } from '@/types/auth.types';
 import styles from './AdminPage.module.scss';

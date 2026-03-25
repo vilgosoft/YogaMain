@@ -1,26 +1,17 @@
 import { useState, useEffect } from 'react';
+import { getApiHealth } from '@/api/config';
+import { isOfflineAuthModeAvailable } from '@/api/localAuth';
 import styles from './ConnectionBanner.module.scss';
 
 export function ConnectionBanner() {
-  const [status, setStatus] = useState<'ok' | 'api-down' | 'db-down'>('ok');
+  const [status, setStatus] = useState<'ok' | 'api-down' | 'db-down' | 'offline-auth'>('ok');
+  const [apiBaseUrl, setApiBaseUrl] = useState('/api');
 
   useEffect(() => {
     async function checkHealth() {
-      try {
-        const res = await fetch('/api/health', { signal: AbortSignal.timeout(3000) });
-        if (!res.ok) {
-          const data = await res.json().catch(() => null);
-          if (data?.data?.api && !data?.data?.database) {
-            setStatus('db-down');
-          } else {
-            setStatus('api-down');
-          }
-        } else {
-          setStatus((prev) => prev !== 'ok' ? 'ok' : prev);
-        }
-      } catch {
-        setStatus('api-down');
-      }
+      const result = await getApiHealth(true);
+      setApiBaseUrl(result.baseUrl);
+      setStatus(result.status === 'api-down' && isOfflineAuthModeAvailable() ? 'offline-auth' : result.status);
     }
 
     checkHealth();
@@ -31,7 +22,7 @@ export function ConnectionBanner() {
   if (status === 'ok') return null;
 
   return (
-    <div className={styles.banner}>
+    <div className={`${styles.banner} ${status === 'offline-auth' ? styles.bannerWarning : ''}`}>
       <div className={styles.content}>
         {status === 'db-down' ? (
           <>
@@ -40,11 +31,17 @@ export function ConnectionBanner() {
             <strong>Start</strong> next to MySQL. This page will
             reconnect automatically.
           </>
+        ) : status === 'offline-auth' ? (
+          <>
+            <strong>Backend offline.</strong> Login and signup will still work
+            locally in this browser. When your API comes back at <code>{apiBaseUrl}</code>,
+            the app will reconnect automatically.
+          </>
         ) : (
           <>
-            <strong>Cannot connect to the server.</strong> Please
-            double-click <code>start.bat</code> in the project folder to
-            start all services. This page will reconnect automatically.
+            <strong>Cannot connect to the server.</strong> Please make sure
+            the backend API is reachable at <code>{apiBaseUrl}</code>. This
+            page will reconnect automatically.
           </>
         )}
       </div>

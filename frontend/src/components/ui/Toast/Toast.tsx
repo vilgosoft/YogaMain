@@ -1,25 +1,12 @@
-import { useState, useEffect, useCallback, createContext, useContext, type ReactNode } from 'react';
+import { useState, useEffect, useCallback, type ReactNode } from 'react';
 import { HiCheckCircle, HiXCircle, HiExclamationTriangle, HiXMark } from 'react-icons/hi2';
+import { ToastContext, type ToastType } from './ToastContext';
 import styles from './Toast.module.scss';
-
-type ToastType = 'success' | 'error' | 'warning' | 'info';
 
 interface Toast {
   id: number;
   type: ToastType;
   message: string;
-}
-
-interface ToastContextType {
-  showToast: (type: ToastType, message: string) => void;
-}
-
-const ToastContext = createContext<ToastContextType | null>(null);
-
-export function useToast(): ToastContextType {
-  const context = useContext(ToastContext);
-  if (!context) throw new Error('useToast must be used within ToastProvider');
-  return context;
 }
 
 let toastId = 0;

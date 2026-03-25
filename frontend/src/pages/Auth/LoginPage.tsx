@@ -2,11 +2,12 @@ import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { HiOutlineEnvelope, HiOutlineLockClosed } from 'react-icons/hi2';
 import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/components/ui/Toast/Toast';
+import { useToast } from '@/components/ui/Toast/ToastContext';
 import { Input } from '@/components/ui/Input/Input';
 import { Button } from '@/components/ui/Button/Button';
 import { ROUTES } from '@/utils/constants';
 import { isValidEmail } from '@/utils/validators';
+import { getApiErrorDetails } from '@/utils/apiErrors';
 import styles from './AuthPage.module.scss';
 
 export function LoginPage() {
@@ -19,9 +20,10 @@ export function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   const validate = (): boolean => {
+    const email = form.email.trim();
     const errs: Record<string, string> = {};
-    if (!form.email) errs.email = 'Email is required';
-    else if (!isValidEmail(form.email)) errs.email = 'Invalid email address';
+    if (!email) errs.email = 'Email is required';
+    else if (!isValidEmail(email)) errs.email = 'Invalid email address';
     if (!form.password) errs.password = 'Password is required';
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -33,18 +35,18 @@ export function LoginPage() {
 
     setLoading(true);
     try {
-      await login(form);
+      await login({
+        email: form.email.trim().toLowerCase(),
+        password: form.password,
+      });
       showToast('success', 'Welcome back!');
       navigate(ROUTES.MY_LEARNING);
     } catch (err: unknown) {
-      console.error('Login error:', err);
-      const axiosErr = err as { response?: { data?: { error?: { message?: string }; message?: string } }; message?: string };
-      const msg =
-        axiosErr?.response?.data?.error?.message ||
-        axiosErr?.response?.data?.message ||
-        axiosErr?.message ||
-        'Login failed. Please try again.';
-      showToast('error', msg);
+      const { message, fields } = getApiErrorDetails(err);
+      if (fields) {
+        setErrors((prev) => ({ ...prev, ...fields }));
+      }
+      showToast('error', message);
     } finally {
       setLoading(false);
     }
@@ -66,7 +68,11 @@ export function LoginPage() {
             placeholder="you@example.com"
             icon={<HiOutlineEnvelope />}
             value={form.email}
-            onChange={(e) => setForm({ ...form, email: e.target.value })}
+            onChange={(e) => {
+              const email = e.target.value;
+              setForm({ ...form, email });
+              setErrors((prev) => ({ ...prev, email: '' }));
+            }}
             error={errors.email}
           />
 
@@ -77,7 +83,11 @@ export function LoginPage() {
             placeholder="Enter your password"
             icon={<HiOutlineLockClosed />}
             value={form.password}
-            onChange={(e) => setForm({ ...form, password: e.target.value })}
+            onChange={(e) => {
+              const password = e.target.value;
+              setForm({ ...form, password });
+              setErrors((prev) => ({ ...prev, password: '' }));
+            }}
             error={errors.password}
           />
 

@@ -10,12 +10,15 @@ interface CoursesResponse {
 
 export async function getCourses(params?: Record<string, string | number>): Promise<CoursesResponse> {
   const res = await client.get<ApiResponse<Course[]>>('/courses', { params });
-  return { data: res.data.data!, meta: res.data.meta! };
+  return {
+    data: Array.isArray(res.data.data) ? res.data.data : [],
+    meta: res.data.meta ?? { page: 1, per_page: 12, total: 0, last_page: 1 },
+  };
 }
 
 export async function getFeaturedCourses(): Promise<Course[]> {
   const res = await client.get<ApiResponse<Course[]>>('/courses/featured');
-  return res.data.data!;
+  return Array.isArray(res.data.data) ? res.data.data : [];
 }
 
 // Course detail
@@ -33,7 +36,7 @@ export async function getCourseBySlug(slug: string): Promise<CourseDetailRespons
 // Categories
 export async function getCategories(): Promise<Category[]> {
   const res = await client.get<ApiResponse<Category[]>>('/categories');
-  return res.data.data!;
+  return Array.isArray(res.data.data) ? res.data.data : [];
 }
 
 // My Learning
@@ -58,5 +61,5 @@ export interface MyLearningEnrollment {
 
 export async function getMyLearning(): Promise<MyLearningEnrollment[]> {
   const res = await client.get<ApiResponse<MyLearningEnrollment[]>>('/my-learning');
-  return res.data.data!;
+  return Array.isArray(res.data.data) ? res.data.data : [];
 }

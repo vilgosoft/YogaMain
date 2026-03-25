@@ -5,7 +5,7 @@ import client from '@/api/client';
 import { Button } from '@/components/ui/Button/Button';
 import { Input } from '@/components/ui/Input/Input';
 import { Spinner } from '@/components/ui/Spinner/Spinner';
-import { useToast } from '@/components/ui/Toast/Toast';
+import { useToast } from '@/components/ui/Toast/ToastContext';
 import type { ApiResponse } from '@/types/api.types';
 import type { Category, Course } from '@/types/course.types';
 import styles from './AdminPage.module.scss';
