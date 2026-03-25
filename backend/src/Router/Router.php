@@ -8,7 +8,7 @@ class Router
 {
     private array $routes = [];
 
-    public function add(string $method, string $path, callable $handler, array $middleware = []): self
+    public function add(string $method, string $path, callable|array $handler, array $middleware = []): self
     {
         $this->routes[] = [
             'method'     => strtoupper($method),
@@ -19,27 +19,27 @@ class Router
         return $this;
     }
 
-    public function get(string $path, callable $handler, array $middleware = []): self
+    public function get(string $path, callable|array $handler, array $middleware = []): self
     {
         return $this->add('GET', $path, $handler, $middleware);
     }
 
-    public function post(string $path, callable $handler, array $middleware = []): self
+    public function post(string $path, callable|array $handler, array $middleware = []): self
     {
         return $this->add('POST', $path, $handler, $middleware);
     }
 
-    public function put(string $path, callable $handler, array $middleware = []): self
+    public function put(string $path, callable|array $handler, array $middleware = []): self
     {
         return $this->add('PUT', $path, $handler, $middleware);
     }
 
-    public function patch(string $path, callable $handler, array $middleware = []): self
+    public function patch(string $path, callable|array $handler, array $middleware = []): self
     {
         return $this->add('PATCH', $path, $handler, $middleware);
     }
 
-    public function delete(string $path, callable $handler, array $middleware = []): self
+    public function delete(string $path, callable|array $handler, array $middleware = []): self
     {
         return $this->add('DELETE', $path, $handler, $middleware);
     }
