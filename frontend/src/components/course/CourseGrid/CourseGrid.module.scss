@@ -1,0 +1,15 @@
+.grid {
+  @include grid(280px, $space-6);
+}
+
+.loading {
+  @include flex-center;
+  padding: $space-16 0;
+}
+
+.empty {
+  text-align: center;
+  color: $color-text-muted;
+  padding: $space-16 0;
+  font-size: $font-size-lg;
+}

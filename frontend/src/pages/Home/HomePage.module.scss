@@ -203,6 +203,42 @@
 }
 
 // ============================================
+// Featured Courses
+// ============================================
+.featured {
+  @include container;
+  padding: $space-16 0;
+
+  @include respond(md) {
+    padding: $space-20 0;
+  }
+}
+
+.featuredHeader {
+  text-align: center;
+  margin-bottom: $space-10;
+
+  h2 {
+    font-size: $font-size-2xl;
+    margin-bottom: $space-3;
+
+    @include respond(md) {
+      font-size: $font-size-3xl;
+    }
+  }
+
+  p {
+    color: $color-text-muted;
+    font-size: $font-size-md;
+  }
+}
+
+.viewAll {
+  @include flex-center;
+  margin-top: $space-10;
+}
+
+// ============================================
 // CTA Section
 // ============================================
 .cta {

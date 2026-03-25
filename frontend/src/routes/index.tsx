@@ -5,6 +5,10 @@ import { AdminRoute } from './AdminRoute';
 import { HomePage } from '@/pages/Home/HomePage';
 import { LoginPage } from '@/pages/Auth/LoginPage';
 import { RegisterPage } from '@/pages/Auth/RegisterPage';
+import { CatalogPage } from '@/pages/Catalog/CatalogPage';
+import { CourseDetailPage } from '@/pages/Catalog/CourseDetailPage';
+import { MyLearningPage } from '@/pages/MyLearning/MyLearningPage';
+import { PaymentCallbackPage } from '@/pages/Payments/PaymentCallbackPage';
 import { AdminLayout } from '@/pages/Admin/AdminLayout';
 import { DashboardPage } from '@/pages/Admin/DashboardPage';
 import { CategoriesPage } from '@/pages/Admin/CategoriesPage';
@@ -21,16 +25,16 @@ export function AppRoutes() {
       <Route path={ROUTES.HOME} element={<HomePage />} />
       <Route path={ROUTES.LOGIN} element={<LoginPage />} />
       <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
+      <Route path={ROUTES.COURSES} element={<CatalogPage />} />
+      <Route path={ROUTES.COURSE_DETAIL} element={<CourseDetailPage />} />
+      <Route path={ROUTES.PAYMENT_CALLBACK} element={<PaymentCallbackPage />} />
 
       {/* Protected Routes */}
       <Route
         path={ROUTES.MY_LEARNING}
         element={
           <ProtectedRoute>
-            <div style={{ padding: '2rem', textAlign: 'center', color: '#9CA3AF' }}>
-              <h2>My Learning</h2>
-              <p>Coming in Phase 4</p>
-            </div>
+            <MyLearningPage />
           </ProtectedRoute>
         }
       />

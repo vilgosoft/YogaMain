@@ -1,0 +1,261 @@
+.page {
+  @include container;
+  padding-top: $space-8;
+  padding-bottom: $space-16;
+  display: flex;
+  gap: $space-8;
+  flex-direction: column;
+
+  @include respond(lg) {
+    flex-direction: row;
+  }
+}
+
+.loading {
+  @include flex-center;
+  min-height: 50vh;
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+}
+
+.hero {
+  border-radius: $radius-lg;
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
+  background: $color-bg-alt;
+  margin-bottom: $space-6;
+}
+
+.heroImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.heroPlaceholder {
+  @include flex-center;
+  width: 100%;
+  height: 100%;
+  color: $color-text-subtle;
+}
+
+.info {
+  @include flex-col;
+  gap: $space-4;
+}
+
+.categoryBadge {
+  display: inline-block;
+  width: fit-content;
+  background: rgba($color-primary, 0.15);
+  color: $color-primary-light;
+  padding: $space-1 $space-3;
+  border-radius: $radius-full;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.title {
+  font-family: $font-heading;
+  font-size: $font-size-2xl;
+  font-weight: $font-weight-bold;
+  color: $color-text;
+  line-height: $line-height-tight;
+
+  @include respond(md) {
+    font-size: $font-size-3xl;
+  }
+}
+
+.metaRow {
+  display: flex;
+  align-items: center;
+  gap: $space-4;
+  flex-wrap: wrap;
+}
+
+.metaItem {
+  display: flex;
+  align-items: center;
+  gap: $space-1;
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+}
+
+.capitalize {
+  text-transform: capitalize;
+}
+
+.description {
+  margin-top: $space-4;
+
+  h2 {
+    font-size: $font-size-xl;
+    font-weight: $font-weight-semibold;
+    color: $color-text;
+    margin-bottom: $space-3;
+  }
+
+  p {
+    color: $color-text-secondary;
+    line-height: $line-height-relaxed;
+    white-space: pre-line;
+  }
+}
+
+.videoList {
+  margin-top: $space-6;
+
+  h2 {
+    font-size: $font-size-xl;
+    font-weight: $font-weight-semibold;
+    color: $color-text;
+    margin-bottom: $space-1;
+  }
+}
+
+.videoSummary {
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+  margin-bottom: $space-4;
+}
+
+.lessons {
+  list-style: none;
+  @include flex-col;
+  gap: 0;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  overflow: hidden;
+}
+
+.lesson {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  padding: $space-3 $space-4;
+  border-bottom: 1px solid $color-border;
+  transition: background $transition-fast;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover {
+    background: $color-bg-alt;
+  }
+}
+
+.lessonNum {
+  @include flex-center;
+  width: 28px;
+  height: 28px;
+  border-radius: $radius-full;
+  background: $color-surface;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-text-muted;
+  flex-shrink: 0;
+}
+
+.lessonInfo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+}
+
+.lessonTitle {
+  font-size: $font-size-sm;
+  color: $color-text;
+  @include truncate;
+}
+
+.lessonDuration {
+  font-size: $font-size-xs;
+  color: $color-text-subtle;
+  flex-shrink: 0;
+}
+
+.previewIcon {
+  color: $color-primary-light;
+  flex-shrink: 0;
+}
+
+.lockIcon {
+  color: $color-text-subtle;
+  flex-shrink: 0;
+}
+
+// Sidebar
+.sidebar {
+  width: 100%;
+
+  @include respond(lg) {
+    width: 360px;
+    flex-shrink: 0;
+    position: sticky;
+    top: $space-24;
+    align-self: flex-start;
+  }
+}
+
+.priceCard {
+  @include glass-card;
+  padding: $space-6;
+  @include flex-col;
+  gap: $space-4;
+}
+
+.priceSection {
+  display: flex;
+  align-items: baseline;
+  gap: $space-3;
+}
+
+.priceCurrent {
+  font-size: $font-size-3xl;
+  font-weight: $font-weight-bold;
+  color: $color-text;
+}
+
+.priceOriginal {
+  font-size: $font-size-lg;
+  color: $color-text-subtle;
+  text-decoration: line-through;
+}
+
+.priceFree {
+  font-size: $font-size-3xl;
+  font-weight: $font-weight-bold;
+  color: $color-accent;
+}
+
+.features {
+  list-style: none;
+  @include flex-col;
+  gap: $space-2;
+  padding-top: $space-4;
+  border-top: 1px solid $color-border;
+
+  li {
+    font-size: $font-size-sm;
+    color: $color-text-muted;
+    padding-left: $space-5;
+    position: relative;
+
+    &::before {
+      content: '✓';
+      position: absolute;
+      left: 0;
+      color: $color-accent;
+      font-weight: $font-weight-bold;
+    }
+  }
+}

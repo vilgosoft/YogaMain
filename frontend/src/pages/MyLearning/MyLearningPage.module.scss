@@ -1,0 +1,148 @@
+.page {
+  @include container;
+  padding-top: $space-8;
+  padding-bottom: $space-16;
+}
+
+.loading {
+  @include flex-center;
+  min-height: 50vh;
+}
+
+.title {
+  font-family: $font-heading;
+  font-size: $font-size-3xl;
+  font-weight: $font-weight-bold;
+  @include gradient-text;
+  margin-bottom: $space-8;
+}
+
+.empty {
+  @include flex-col;
+  align-items: center;
+  text-align: center;
+  padding: $space-16 0;
+  gap: $space-4;
+  color: $color-text-muted;
+
+  h2 {
+    font-size: $font-size-xl;
+    color: $color-text;
+  }
+
+  p {
+    max-width: 400px;
+  }
+}
+
+.grid {
+  @include grid(300px, $space-6);
+}
+
+.card {
+  @include card;
+  @include flex-col;
+  transition: transform $transition-base, border-color $transition-base, box-shadow $transition-base;
+
+  &:hover {
+    border-color: $color-primary;
+    transform: translateY(-2px);
+    box-shadow: $shadow-glow;
+  }
+}
+
+.imageWrap {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: $color-bg-alt;
+}
+
+.image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.placeholder {
+  @include flex-center;
+  width: 100%;
+  height: 100%;
+  color: $color-text-subtle;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  @include flex-center;
+  background: rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  transition: opacity $transition-base;
+  color: white;
+
+  .card:hover & {
+    opacity: 1;
+  }
+}
+
+.body {
+  @include flex-col;
+  flex: 1;
+  padding: $space-4;
+  gap: $space-2;
+}
+
+.category {
+  font-size: $font-size-xs;
+  color: $color-primary-light;
+  font-weight: $font-weight-medium;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.cardTitle {
+  font-size: $font-size-base;
+  font-weight: $font-weight-semibold;
+  color: $color-text;
+  @include truncate(2);
+}
+
+.meta {
+  display: flex;
+  gap: $space-3;
+  flex-wrap: wrap;
+}
+
+.metaItem {
+  display: flex;
+  align-items: center;
+  gap: $space-1;
+  font-size: $font-size-xs;
+  color: $color-text-subtle;
+}
+
+.progressWrap {
+  margin-top: auto;
+  padding-top: $space-2;
+}
+
+.progressBar {
+  width: 100%;
+  height: 6px;
+  background: $color-bg-alt;
+  border-radius: $radius-full;
+  overflow: hidden;
+  margin-bottom: $space-1;
+}
+
+.progressFill {
+  height: 100%;
+  background: $gradient-primary;
+  border-radius: $radius-full;
+  transition: width $transition-slow;
+}
+
+.progressText {
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+}

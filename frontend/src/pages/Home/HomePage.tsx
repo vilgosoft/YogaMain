@@ -1,7 +1,11 @@
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { HiOutlineAcademicCap, HiOutlineUsers, HiOutlinePlayCircle, HiOutlineClock } from 'react-icons/hi2';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/Button/Button';
+import { CourseGrid } from '@/components/course/CourseGrid/CourseGrid';
+import { getFeaturedCourses } from '@/api/courses.api';
+import type { Course } from '@/types/course.types';
 import { ROUTES } from '@/utils/constants';
 import styles from './HomePage.module.scss';
 
@@ -42,6 +46,15 @@ const features = [
 export function HomePage() {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
+  const [featuredCourses, setFeaturedCourses] = useState<Course[]>([]);
+  const [featuredLoading, setFeaturedLoading] = useState(true);
+
+  useEffect(() => {
+    getFeaturedCourses()
+      .then(setFeaturedCourses)
+      .catch(() => {})
+      .finally(() => setFeaturedLoading(false));
+  }, []);
 
   return (
     <div className={styles.home}>
@@ -101,6 +114,29 @@ export function HomePage() {
             </div>
           ))}
         </div>
+      </section>
+
+      {/* Featured Courses */}
+      <section className={styles.featured}>
+        <div className={styles.featuredHeader}>
+          <h2>
+            Featured <span className={styles.heroGradient}>Courses</span>
+          </h2>
+          <p>Start with our most popular yoga courses.</p>
+        </div>
+        <CourseGrid
+          courses={featuredCourses}
+          loading={featuredLoading}
+          emptyMessage="Courses coming soon!"
+          onCourseClick={(course) => navigate(`/courses/${course.slug}`)}
+        />
+        {featuredCourses.length > 0 && (
+          <div className={styles.viewAll}>
+            <Button variant="outline" size="lg" onClick={() => navigate(ROUTES.COURSES)}>
+              View All Courses
+            </Button>
+          </div>
+        )}
       </section>
 
       {/* CTA Section */}

@@ -1,0 +1,38 @@
+.wrap {
+  display: flex;
+  gap: $space-2;
+  overflow-x: auto;
+  padding-bottom: $space-2;
+  @include scrollbar-dark;
+
+  -ms-overflow-style: none;
+  scrollbar-width: thin;
+}
+
+.pill {
+  @include button-reset;
+  white-space: nowrap;
+  padding: $space-2 $space-4;
+  border-radius: $radius-full;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-muted;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  transition: all $transition-base;
+
+  &:hover {
+    color: $color-text;
+    border-color: $color-border-light;
+  }
+}
+
+.active {
+  background: $gradient-primary;
+  color: $color-text;
+  border-color: transparent;
+
+  &:hover {
+    border-color: transparent;
+  }
+}

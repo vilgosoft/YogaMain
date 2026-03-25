@@ -72,16 +72,27 @@ $adminTransactionController = new App\Controllers\AdminTransactionController();
 $router->get('/admin/transactions',    [$adminTransactionController, 'index'], $adminMiddleware);
 
 // =============================================
-// Public Course Routes (added in Phase 4)
+// Public Course Routes (Phase 4)
 // =============================================
-// $courseController = new App\Controllers\CourseController();
-// $router->get('/courses', [$courseController, 'index']);
+$courseController = new App\Controllers\CourseController();
+$router->get('/courses/featured', [$courseController, 'featured']);
+$router->get('/courses',          [$courseController, 'index']);
+$router->get('/categories',       [$courseController, 'categories']);
+$router->get('/courses/:slug',    [$courseController, 'show']);
 
 // =============================================
-// Payment Routes (added in Phase 4)
+// User Dashboard (Phase 4)
 // =============================================
-// $paymentController = new App\Controllers\PaymentController();
-// $router->post('/payments/phonepe-init', [$paymentController, 'initiate'], [AuthMiddleware::class]);
+$userDashboardController = new App\Controllers\UserDashboardController();
+$router->get('/my-learning', [$userDashboardController, 'myLearning'], [AuthMiddleware::class]);
+
+// =============================================
+// Payment Routes (Phase 4)
+// =============================================
+$paymentController = new App\Controllers\PaymentController();
+$router->post('/payments/phonepe-init',          [$paymentController, 'initiate'], [AuthMiddleware::class]);
+$router->post('/payments/phonepe-callback',      [$paymentController, 'callback']);
+$router->get('/payments/status/:merchant_txn_id', [$paymentController, 'status'],  [AuthMiddleware::class]);
 
 // =============================================
 // Video Routes (added in Phase 5)

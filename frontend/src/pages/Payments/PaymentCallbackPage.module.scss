@@ -1,0 +1,60 @@
+.page {
+  @include container;
+  @include flex-center;
+  min-height: 60vh;
+  padding-top: $space-16;
+  padding-bottom: $space-16;
+}
+
+.card {
+  @include glass-card;
+  @include flex-col;
+  align-items: center;
+  text-align: center;
+  padding: $space-12 $space-8;
+  gap: $space-4;
+  max-width: 480px;
+  width: 100%;
+
+  h2 {
+    font-size: $font-size-2xl;
+    font-weight: $font-weight-bold;
+    color: $color-text;
+  }
+
+  p {
+    color: $color-text-muted;
+    line-height: $line-height-relaxed;
+    max-width: 360px;
+  }
+}
+
+.success {
+  border-color: rgba($color-accent, 0.3);
+}
+
+.error {
+  border-color: rgba($color-error, 0.3);
+}
+
+.warning {
+  border-color: rgba($color-warning, 0.3);
+}
+
+.iconSuccess {
+  color: $color-accent;
+}
+
+.iconError {
+  color: $color-error;
+}
+
+.iconWarning {
+  color: $color-warning;
+}
+
+.actions {
+  display: flex;
+  gap: $space-3;
+  margin-top: $space-2;
+}
