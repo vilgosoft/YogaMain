@@ -171,12 +171,17 @@ class AuthController
         }
 
         // Clear the cookie
+        $isSecure = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'
+            || ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https'
+            || ($_SERVER['REQUEST_SCHEME'] ?? '') === 'https'
+            || (int)($_SERVER['SERVER_PORT'] ?? 0) === 443;
+
         setcookie('refresh_token', '', [
             'expires'  => time() - 3600,
             'path'     => '/',
             'httponly'  => true,
             'samesite' => 'Lax',
-            'secure'   => isset($_SERVER['HTTPS']),
+            'secure'   => $isSecure,
         ]);
 
         Response::json(null, 'Logged out successfully');
@@ -201,12 +206,18 @@ class AuthController
 
     private function setRefreshCookie(string $token): void
     {
+        // Detect HTTPS: direct or behind reverse proxy/CDN (Hostinger, Cloudflare, etc.)
+        $isSecure = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'
+            || ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https'
+            || ($_SERVER['REQUEST_SCHEME'] ?? '') === 'https'
+            || (int)($_SERVER['SERVER_PORT'] ?? 0) === 443;
+
         setcookie('refresh_token', $token, [
             'expires'  => time() + $this->jwt->getRefreshTtl(),
             'path'     => '/',
             'httponly'  => true,
             'samesite' => 'Lax',
-            'secure'   => isset($_SERVER['HTTPS']),
+            'secure'   => $isSecure,
         ]);
     }
 }

@@ -9,8 +9,43 @@
 
 declare(strict_types=1);
 
+// Show errors during initial setup (remove after everything works)
+ini_set('display_errors', '0');
+error_reporting(E_ALL);
+ini_set('log_errors', '1');
+
 // Backend lives one level above public_html
+// Hostinger structure: /home/username/public_html/api/index.php
+//                      /home/username/yoga-backend/
 $backendDir = dirname(__DIR__, 2) . '/yoga-backend';
+
+// Verify backend directory exists — show helpful error if not
+if (!is_dir($backendDir)) {
+    http_response_code(500);
+    header('Content-Type: application/json');
+    echo json_encode([
+        'success' => false,
+        'error' => [
+            'message' => 'Backend not found at: ' . $backendDir . '. Make sure yoga-backend folder exists next to public_html.',
+            'code' => 'BACKEND_NOT_FOUND',
+        ],
+    ]);
+    exit;
+}
+
+// Verify autoloader exists
+if (!file_exists($backendDir . '/vendor/autoload.php')) {
+    http_response_code(500);
+    header('Content-Type: application/json');
+    echo json_encode([
+        'success' => false,
+        'error' => [
+            'message' => 'vendor/autoload.php not found. Make sure to upload the vendor/ folder inside yoga-backend/.',
+            'code' => 'VENDOR_NOT_FOUND',
+        ],
+    ]);
+    exit;
+}
 
 // Load Composer autoloader
 require_once $backendDir . '/vendor/autoload.php';
@@ -111,10 +146,13 @@ $router->get('/payments/status/:merchant_txn_id', [$paymentController, 'status']
 try {
     $router->dispatch();
 } catch (\Throwable $e) {
-    $isDev = ($_ENV['APP_ENV'] ?? 'production') === 'development';
-    App\Helpers\Response::error(
-        $isDev ? $e->getMessage() : 'Internal server error',
-        'SERVER_ERROR',
-        500
-    );
+    http_response_code(500);
+    // Always show error message in API response so frontend can display it
+    echo json_encode([
+        'success' => false,
+        'error' => [
+            'message' => $e->getMessage(),
+            'code' => 'SERVER_ERROR',
+        ],
+    ]);
 }
