@@ -1,6 +1,5 @@
 # Backend
 backend/vendor/
-backend/.env
 backend/storage/videos/
 backend/storage/thumbnails/
 
