@@ -13,6 +13,9 @@ frontend/dist/
 .vscode/
 *.swp
 
+# Deploy exports (Composer deps belong on server or from deploy/build.bat)
+deploy/**/vendor/
+
 # OS
 .DS_Store
 Thumbs.db
