@@ -16,8 +16,10 @@ export function getAccessToken(): string | null {
   return accessToken;
 }
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+
 const client = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL: API_BASE_URL,
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
@@ -61,7 +63,7 @@ client.interceptors.response.use(
 
     try {
       const { data } = await axios.post<ApiResponse<{ access_token: string }>>(
-        `${import.meta.env.VITE_API_URL || '/api'}/auth/refresh`,
+        `${API_BASE_URL}/auth/refresh`,
         {},
         { withCredentials: true }
       );
