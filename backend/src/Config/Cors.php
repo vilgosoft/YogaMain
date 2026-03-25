@@ -6,9 +6,20 @@ class Cors
 {
     public static function handle(): void
     {
-        $allowedOrigin = $_ENV['FRONTEND_URL'] ?? 'http://localhost:5173';
+        $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+        $allowedOrigins = array_filter(array_map('trim', [
+            $_ENV['FRONTEND_URL'] ?? 'http://localhost:5173',
+            'http://localhost:5173',
+            'http://localhost:3000',
+        ]));
 
-        header("Access-Control-Allow-Origin: {$allowedOrigin}");
+        // Allow the requesting origin if it matches allowed list or is a localhost origin
+        if (in_array($origin, $allowedOrigins, true) || preg_match('#^https?://localhost(:\d+)?$#', $origin)) {
+            header("Access-Control-Allow-Origin: {$origin}");
+        } else {
+            header('Access-Control-Allow-Origin: ' . ($allowedOrigins[0] ?? 'http://localhost:5173'));
+        }
+
         header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS');
         header('Access-Control-Allow-Headers: Content-Type, Authorization');
         header('Access-Control-Allow-Credentials: true');
