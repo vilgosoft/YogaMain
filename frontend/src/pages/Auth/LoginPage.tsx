@@ -37,8 +37,12 @@ export function LoginPage() {
       showToast('success', 'Welcome back!');
       navigate(ROUTES.MY_LEARNING);
     } catch (err: unknown) {
+      console.error('Login error:', err);
+      const axiosErr = err as { response?: { data?: { error?: { message?: string }; message?: string } }; message?: string };
       const msg =
-        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message ||
+        axiosErr?.response?.data?.error?.message ||
+        axiosErr?.response?.data?.message ||
+        axiosErr?.message ||
         'Login failed. Please try again.';
       showToast('error', msg);
     } finally {

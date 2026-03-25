@@ -56,12 +56,18 @@ export function RegisterPage() {
       showToast('success', 'Account created successfully!');
       navigate(ROUTES.MY_LEARNING);
     } catch (err: unknown) {
-      const errorData = (err as { response?: { data?: { error?: { message?: string; fields?: Record<string, string> } } } })
-        ?.response?.data?.error;
+      console.error('Registration error:', err);
+      const axiosErr = err as { response?: { data?: { error?: { message?: string; fields?: Record<string, string> }; message?: string } }; message?: string };
+      const errorData = axiosErr?.response?.data?.error;
       if (errorData?.fields) {
         setErrors(errorData.fields);
       }
-      showToast('error', errorData?.message || 'Registration failed. Please try again.');
+      const msg =
+        errorData?.message ||
+        axiosErr?.response?.data?.message ||
+        axiosErr?.message ||
+        'Registration failed. Please try again.';
+      showToast('error', msg);
     } finally {
       setLoading(false);
     }

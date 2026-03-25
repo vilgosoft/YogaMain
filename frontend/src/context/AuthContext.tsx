@@ -1,4 +1,4 @@
-import { createContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+import { createContext, useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
 import type { User, LoginRequest, RegisterRequest } from '@/types/auth.types';
 import * as authApi from '@/api/auth.api';
 import { setAccessToken } from '@/api/client';
@@ -18,17 +18,23 @@ export const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const manualAuthRef = useRef(false);
 
   // Try to restore session on mount via refresh token cookie
   useEffect(() => {
     const initAuth = async () => {
       try {
         const data = await authApi.refreshToken();
-        setAccessToken(data.access_token);
-        setUser(data.user);
+        if (!manualAuthRef.current) {
+          setAccessToken(data.access_token);
+          setUser(data.user);
+        }
       } catch {
-        setAccessToken(null);
-        setUser(null);
+        // Only clear state if user hasn't manually logged in/registered
+        if (!manualAuthRef.current) {
+          setAccessToken(null);
+          setUser(null);
+        }
       } finally {
         setIsLoading(false);
       }
@@ -38,12 +44,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (credentials: LoginRequest) => {
     const data = await authApi.login(credentials);
+    manualAuthRef.current = true;
     setAccessToken(data.access_token);
     setUser(data.user);
   }, []);
 
   const register = useCallback(async (regData: RegisterRequest) => {
     const data = await authApi.register(regData);
+    manualAuthRef.current = true;
     setAccessToken(data.access_token);
     setUser(data.user);
   }, []);
