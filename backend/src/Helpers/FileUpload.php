@@ -7,6 +7,49 @@ class FileUpload
     private static array $imageMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
     private static array $videoMimes = ['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/webm', 'video/x-matroska'];
 
+    /**
+     * Get the public uploads directory.
+     * On Hostinger: /home/u.../domains/site/public_html/uploads
+     * Locally: backend/storage (fallback)
+     */
+    private static function getUploadsDir(): string
+    {
+        // If UPLOADS_PATH is explicitly set, use it
+        if (!empty($_ENV['UPLOADS_PATH'])) {
+            return rtrim($_ENV['UPLOADS_PATH'], '/');
+        }
+
+        // Auto-detect: find public_html relative to current working directory
+        // On Hostinger, the API entry is at public_html/api/index.php
+        // So public_html is 2 levels up from the api dir
+        $publicHtml = $_SERVER['DOCUMENT_ROOT'] ?? '';
+        if ($publicHtml && is_dir($publicHtml)) {
+            return $publicHtml . '/uploads';
+        }
+
+        // Fallback for local dev
+        return ($_ENV['STORAGE_PATH'] ?? './storage');
+    }
+
+    /**
+     * Get the public URL prefix for uploaded files.
+     */
+    private static function getUrlPrefix(): string
+    {
+        if (!empty($_ENV['UPLOADS_URL'])) {
+            return rtrim($_ENV['UPLOADS_URL'], '/');
+        }
+
+        // If using public_html/uploads, URL is just /uploads
+        $publicHtml = $_SERVER['DOCUMENT_ROOT'] ?? '';
+        if ($publicHtml && is_dir($publicHtml)) {
+            return '/uploads';
+        }
+
+        // Fallback for local dev (served through /api/storage proxy or similar)
+        return '/api/storage';
+    }
+
     public static function handleImage(array $file, string $subDir = 'thumbnails'): ?string
     {
         if ($file['error'] !== UPLOAD_ERR_OK) return null;
@@ -22,23 +65,40 @@ class FileUpload
             return null;
         }
 
-        $storagePath = ($_ENV['STORAGE_PATH'] ?? './storage') . '/' . $subDir;
-        if (!is_dir($storagePath)) {
-            mkdir($storagePath, 0755, true);
+        $uploadsDir = self::getUploadsDir() . '/' . $subDir;
+        if (!is_dir($uploadsDir)) {
+            mkdir($uploadsDir, 0755, true);
         }
 
         $ext = self::getExtension($mime);
         $filename = uniqid('img_', true) . '.' . $ext;
-        $destination = $storagePath . '/' . $filename;
+        $destination = $uploadsDir . '/' . $filename;
 
-        move_uploaded_file($file['tmp_name'], $destination);
+        if (!move_uploaded_file($file['tmp_name'], $destination)) {
+            Response::error('Failed to save image. Check folder permissions.', 'UPLOAD_FAILED', 500);
+            return null;
+        }
 
-        return "/{$subDir}/{$filename}";
+        // Return full URL path (accessible via browser)
+        return self::getUrlPrefix() . '/' . $subDir . '/' . $filename;
     }
 
     public static function handleVideo(array $file): ?string
     {
-        if ($file['error'] !== UPLOAD_ERR_OK) return null;
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            $errors = [
+                UPLOAD_ERR_INI_SIZE   => 'Video exceeds server upload limit. Contact hosting to increase upload_max_filesize.',
+                UPLOAD_ERR_FORM_SIZE  => 'Video exceeds form upload limit.',
+                UPLOAD_ERR_PARTIAL    => 'Video was only partially uploaded. Try again.',
+                UPLOAD_ERR_NO_FILE    => 'No video file was uploaded.',
+                UPLOAD_ERR_NO_TMP_DIR => 'Server temp directory missing.',
+                UPLOAD_ERR_CANT_WRITE => 'Failed to write video to disk. Check permissions.',
+                UPLOAD_ERR_EXTENSION  => 'Upload blocked by PHP extension.',
+            ];
+            $msg = $errors[$file['error']] ?? 'Upload error code: ' . $file['error'];
+            Response::error($msg, 'UPLOAD_FAILED', 400);
+            return null;
+        }
 
         $mime = mime_content_type($file['tmp_name']);
         if (!in_array($mime, self::$videoMimes, true)) {
@@ -51,18 +111,22 @@ class FileUpload
             return null;
         }
 
-        $storagePath = ($_ENV['STORAGE_PATH'] ?? './storage') . '/videos/raw';
-        if (!is_dir($storagePath)) {
-            mkdir($storagePath, 0755, true);
+        $uploadsDir = self::getUploadsDir() . '/videos';
+        if (!is_dir($uploadsDir)) {
+            mkdir($uploadsDir, 0755, true);
         }
 
         $ext = self::getExtension($mime);
         $filename = uniqid('vid_', true) . '.' . $ext;
-        $destination = $storagePath . '/' . $filename;
+        $destination = $uploadsDir . '/' . $filename;
 
-        move_uploaded_file($file['tmp_name'], $destination);
+        if (!move_uploaded_file($file['tmp_name'], $destination)) {
+            Response::error('Failed to save video. Check folder permissions.', 'UPLOAD_FAILED', 500);
+            return null;
+        }
 
-        return $destination;
+        // Return full URL path
+        return self::getUrlPrefix() . '/videos/' . $filename;
     }
 
     private static function getExtension(string $mime): string

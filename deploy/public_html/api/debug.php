@@ -166,5 +166,40 @@ if (function_exists('apache_get_modules')) {
     echo "Cannot detect (CGI mode) — usually enabled on Hostinger\n";
 }
 
+// 9. Upload limits
+echo "\n9. PHP Upload Limits:\n";
+echo "   upload_max_filesize: " . ini_get('upload_max_filesize') . "\n";
+echo "   post_max_size:       " . ini_get('post_max_size') . "\n";
+echo "   max_execution_time:  " . ini_get('max_execution_time') . "s\n";
+echo "   memory_limit:        " . ini_get('memory_limit') . "\n";
+$uploadMax = ini_get('upload_max_filesize');
+$uploadBytes = (int) $uploadMax;
+if (stripos($uploadMax, 'M') !== false) $uploadBytes = (int) $uploadMax * 1024 * 1024;
+if ($uploadBytes < 100 * 1024 * 1024) {
+    echo "   ⚠️ upload_max_filesize is low for video uploads. Upload .user.ini to public_html/\n";
+}
+
+// 10. Uploads directory
+echo "\n10. Uploads Directory:\n";
+$docRoot = $_SERVER['DOCUMENT_ROOT'] ?? dirname(__DIR__);
+$uploadsDir = $docRoot . '/uploads';
+echo "   Document root:  $docRoot\n";
+echo "   Uploads path:   $uploadsDir\n";
+if (is_dir($uploadsDir)) {
+    echo "   ✅ Directory exists\n";
+    echo "   Writable: " . (is_writable($uploadsDir) ? "✅ yes" : "❌ NO — fix permissions to 755") . "\n";
+    $subs = ['thumbnails', 'videos'];
+    foreach ($subs as $sub) {
+        $subPath = $uploadsDir . '/' . $sub;
+        if (is_dir($subPath)) {
+            echo "   ✅ $sub/ exists\n";
+        } else {
+            echo "   ⏳ $sub/ will be created on first upload\n";
+        }
+    }
+} else {
+    echo "   ❌ NOT FOUND — create 'uploads' folder inside public_html/\n";
+}
+
 echo "\n=== END OF DIAGNOSTICS ===\n";
 echo "\n⚠️ DELETE THIS FILE after debugging! It exposes server info.\n";

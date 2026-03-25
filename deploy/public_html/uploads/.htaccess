@@ -1,0 +1,14 @@
+# Allow direct access to uploaded files
+# Block PHP execution for security
+<FilesMatch "\.ph(p|tml)$">
+    Require all denied
+</FilesMatch>
+
+# Cache images and videos
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType image/jpeg "access plus 30 days"
+    ExpiresByType image/png "access plus 30 days"
+    ExpiresByType image/webp "access plus 30 days"
+    ExpiresByType video/mp4 "access plus 7 days"
+</IfModule>
