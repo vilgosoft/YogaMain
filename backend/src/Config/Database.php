@@ -13,12 +13,17 @@ class Database
     {
         if (self::$instance === null) {
             try {
-                $dsn = sprintf(
-                    'mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4',
-                    $_ENV['DB_HOST'] ?? '127.0.0.1',
-                    $_ENV['DB_PORT'] ?? '3306',
-                    $_ENV['DB_NAME'] ?? 'yoga_lms'
-                );
+                $socket = $_ENV['DB_SOCKET'] ?? '/var/run/mysqld/mysqld.sock';
+                $host = $_ENV['DB_HOST'] ?? '127.0.0.1';
+                $port = $_ENV['DB_PORT'] ?? '3306';
+                $dbname = $_ENV['DB_NAME'] ?? 'yoga_lms';
+
+                // Prefer Unix socket for local connections (more reliable)
+                if (($host === '127.0.0.1' || $host === 'localhost') && file_exists($socket)) {
+                    $dsn = sprintf('mysql:unix_socket=%s;dbname=%s;charset=utf8mb4', $socket, $dbname);
+                } else {
+                    $dsn = sprintf('mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4', $host, $port, $dbname);
+                }
 
                 self::$instance = new PDO($dsn, $_ENV['DB_USER'] ?? 'root', $_ENV['DB_PASS'] ?? '', [
                     PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
@@ -28,7 +33,11 @@ class Database
                 ]);
             } catch (PDOException $e) {
                 http_response_code(500);
-                echo json_encode(['success' => false, 'error' => ['message' => 'Database connection failed']]);
+                $errorMsg = 'Database connection failed';
+                if (($_ENV['APP_ENV'] ?? 'production') === 'development') {
+                    $errorMsg .= ': ' . $e->getMessage();
+                }
+                echo json_encode(['success' => false, 'error' => ['message' => $errorMsg]]);
                 exit;
             }
         }
