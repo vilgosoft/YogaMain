@@ -4,11 +4,15 @@ namespace App\Config;
 
 use PDO;
 use PDOException;
+use RuntimeException;
 
 class Database
 {
     private static ?PDO $instance = null;
 
+    /**
+     * @throws RuntimeException when the database connection fails
+     */
     public static function getConnection(): PDO
     {
         if (self::$instance === null) {
@@ -32,25 +36,12 @@ class Database
                     PDO::MYSQL_ATTR_INIT_COMMAND  => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci",
                 ]);
             } catch (PDOException $e) {
-                http_response_code(500);
                 $errorMsg = 'Database connection failed';
-                if (($_ENV['APP_ENV'] ?? 'production') === 'development') {
-                    $errorMsg .= ': ' . $e->getMessage();
-                    if (str_contains($e->getMessage(), 'refused') || str_contains($e->getMessage(), '2002')) {
-                        $errorMsg .= '. Please ensure MySQL is running (start via XAMPP/WAMP or run: net start mysql)';
-                    }
+                if (($host === '127.0.0.1' || $host === 'localhost') &&
+                    (str_contains($e->getMessage(), 'refused') || str_contains($e->getMessage(), '2002'))) {
+                    $errorMsg = 'MySQL is not running. Please start MySQL first (open XAMPP Control Panel and click Start next to MySQL)';
                 }
-
-                // Set CORS headers so browser can read the error
-                $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
-                if (preg_match('#^https?://localhost(:\d+)?$#', $origin)) {
-                    header("Access-Control-Allow-Origin: {$origin}");
-                    header('Access-Control-Allow-Credentials: true');
-                }
-                header('Content-Type: application/json');
-
-                echo json_encode(['success' => false, 'error' => ['code' => 'DB_CONNECTION', 'message' => $errorMsg]]);
-                exit;
+                throw new RuntimeException($errorMsg, 0, $e);
             }
         }
 

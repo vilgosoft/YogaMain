@@ -100,9 +100,37 @@ $router->get('/payments/status/:merchant_txn_id', [$paymentController, 'status']
 // $videoController = new App\Controllers\VideoController();
 // $router->get('/videos/:id/stream', [$videoController, 'stream'], [AuthMiddleware::class]);
 
+// Health check (no DB required)
+$router->get('/health', function () {
+    $status = ['api' => true, 'database' => false];
+    try {
+        \App\Config\Database::getConnection();
+        $status['database'] = true;
+    } catch (\Throwable $e) {
+        // DB is down — capture but don't crash
+    }
+    $code = $status['database'] ? 200 : 503;
+    http_response_code($code);
+    echo json_encode(['success' => $status['database'], 'data' => $status]);
+    exit;
+});
+
 // Dispatch the request
 try {
     $router->dispatch();
+} catch (\RuntimeException $e) {
+    if (str_contains($e->getMessage(), 'MySQL is not running') || str_contains($e->getMessage(), 'Database connection failed')) {
+        http_response_code(503);
+        // Set CORS headers so the browser can read the error
+        $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+        if (preg_match('#^https?://localhost(:\d+)?$#', $origin)) {
+            header("Access-Control-Allow-Origin: {$origin}");
+            header('Access-Control-Allow-Credentials: true');
+        }
+        App\Helpers\Response::error($e->getMessage(), 'DB_CONNECTION', 503);
+    } else {
+        throw $e;
+    }
 } catch (\Throwable $e) {
     $isDev = ($_ENV['APP_ENV'] ?? 'production') === 'development';
     App\Helpers\Response::error(
