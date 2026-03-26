@@ -72,6 +72,148 @@ foreach ($uploadDirs as $dir) {
     }
 }
 
+// === AUTO-FIX FileUpload.php if it's the old version ===
+// The old version saves to ./storage/videos/raw/ which is wrong.
+// This writes the correct version so uploads go to public_html/uploads/
+$fileUploadPath = $backendDir . '/src/Helpers/FileUpload.php';
+$fileUploadContent = file_exists($fileUploadPath) ? file_get_contents($fileUploadPath) : '';
+if (str_contains($fileUploadContent, 'videos/raw') || !str_contains($fileUploadContent, 'UPLOADS_PATH')) {
+    $correctFileUpload = <<<'PHPCODE'
+<?php
+
+namespace App\Helpers;
+
+class FileUpload
+{
+    private static array $imageMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    private static array $videoMimes = ['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/webm', 'video/x-matroska'];
+
+    private static function getUploadsDir(): string
+    {
+        if (!empty($_ENV['UPLOADS_PATH'])) {
+            return rtrim($_ENV['UPLOADS_PATH'], '/');
+        }
+        $docRoot = $_SERVER['DOCUMENT_ROOT'] ?? '';
+        if ($docRoot && is_dir($docRoot . '/uploads')) {
+            return $docRoot . '/uploads';
+        }
+        $domainRoot = dirname(dirname(__DIR__, 3));
+        if (is_dir($domainRoot . '/public_html')) {
+            $dir = $domainRoot . '/public_html/uploads';
+            if (!is_dir($dir)) @mkdir($dir, 0755, true);
+            return $dir;
+        }
+        return ($_ENV['STORAGE_PATH'] ?? './storage');
+    }
+
+    private static function getUrlPrefix(): string
+    {
+        if (!empty($_ENV['UPLOADS_URL'])) {
+            return rtrim($_ENV['UPLOADS_URL'], '/');
+        }
+        $docRoot = $_SERVER['DOCUMENT_ROOT'] ?? '';
+        if ($docRoot && is_dir($docRoot . '/uploads')) {
+            return '/uploads';
+        }
+        $domainRoot = dirname(dirname(__DIR__, 3));
+        if (is_dir($domainRoot . '/public_html')) {
+            return '/uploads';
+        }
+        return '/api/storage';
+    }
+
+    public static function handleImage(array $file, string $subDir = 'thumbnails'): ?string
+    {
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            Response::error(self::getUploadErrorMessage($file['error']), 'UPLOAD_FAILED', 400);
+            return null;
+        }
+        $mime = mime_content_type($file['tmp_name']);
+        if (!in_array($mime, self::$imageMimes, true)) {
+            Response::error('Invalid image type. Allowed: JPG, PNG, WebP, GIF', 'INVALID_FILE', 400);
+            return null;
+        }
+        if ($file['size'] > 5 * 1024 * 1024) {
+            Response::error('Image must be under 5MB', 'FILE_TOO_LARGE', 400);
+            return null;
+        }
+        $uploadsDir = self::getUploadsDir() . '/' . $subDir;
+        if (!is_dir($uploadsDir)) {
+            if (!@mkdir($uploadsDir, 0755, true)) {
+                Response::error('Failed to create directory: ' . $uploadsDir, 'UPLOAD_FAILED', 500);
+                return null;
+            }
+        }
+        $ext = self::getExtension($mime);
+        $filename = uniqid('img_', true) . '.' . $ext;
+        $destination = $uploadsDir . '/' . $filename;
+        if (!move_uploaded_file($file['tmp_name'], $destination)) {
+            Response::error('Failed to save image to: ' . $destination, 'UPLOAD_FAILED', 500);
+            return null;
+        }
+        return self::getUrlPrefix() . '/' . $subDir . '/' . $filename;
+    }
+
+    public static function handleVideo(array $file): ?string
+    {
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            Response::error(self::getUploadErrorMessage($file['error']), 'UPLOAD_FAILED', 400);
+            return null;
+        }
+        $mime = mime_content_type($file['tmp_name']);
+        if (!in_array($mime, self::$videoMimes, true)) {
+            Response::error('Invalid video type. Allowed: MP4, MOV, AVI, WebM, MKV', 'INVALID_FILE', 400);
+            return null;
+        }
+        if ($file['size'] > 500 * 1024 * 1024) {
+            Response::error('Video must be under 500MB', 'FILE_TOO_LARGE', 400);
+            return null;
+        }
+        $uploadsDir = self::getUploadsDir() . '/videos';
+        if (!is_dir($uploadsDir)) {
+            if (!@mkdir($uploadsDir, 0755, true)) {
+                Response::error('Failed to create directory: ' . $uploadsDir, 'UPLOAD_FAILED', 500);
+                return null;
+            }
+        }
+        $ext = self::getExtension($mime);
+        $filename = uniqid('vid_', true) . '.' . $ext;
+        $destination = $uploadsDir . '/' . $filename;
+        if (!move_uploaded_file($file['tmp_name'], $destination)) {
+            Response::error('Failed to save video to: ' . $destination, 'UPLOAD_FAILED', 500);
+            return null;
+        }
+        return self::getUrlPrefix() . '/videos/' . $filename;
+    }
+
+    private static function getExtension(string $mime): string
+    {
+        $map = [
+            'image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'image/gif' => 'gif',
+            'video/mp4' => 'mp4', 'video/quicktime' => 'mov', 'video/x-msvideo' => 'avi',
+            'video/webm' => 'webm', 'video/x-matroska' => 'mkv',
+        ];
+        return $map[$mime] ?? 'bin';
+    }
+
+    private static function getUploadErrorMessage(int $code): string
+    {
+        $errors = [
+            UPLOAD_ERR_INI_SIZE => 'File exceeds server upload limit.',
+            UPLOAD_ERR_FORM_SIZE => 'File exceeds form limit.',
+            UPLOAD_ERR_PARTIAL => 'File was only partially uploaded.',
+            UPLOAD_ERR_NO_FILE => 'No file was uploaded.',
+            UPLOAD_ERR_NO_TMP_DIR => 'Server temp directory missing.',
+            UPLOAD_ERR_CANT_WRITE => 'Failed to write to disk.',
+            UPLOAD_ERR_EXTENSION => 'Upload blocked by PHP extension.',
+        ];
+        return $errors[$code] ?? 'Upload error code: ' . $code;
+    }
+}
+PHPCODE;
+    @file_put_contents($fileUploadPath, $correctFileUpload);
+}
+
 // Handle CORS
 App\Config\Cors::handle();
 
