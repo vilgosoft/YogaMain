@@ -12,6 +12,47 @@ $dotenv->safeLoad();
 // Handle CORS
 App\Config\Cors::handle();
 
+// Serve static files from storage/ in local dev (on production, Apache serves uploads directly)
+$requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+if (preg_match('#^/api/storage/(.+)$#', $requestUri, $storageMatch)) {
+    $storagePath = realpath(__DIR__ . '/../storage');
+    if ($storagePath) {
+        $filePath = realpath($storagePath . '/' . $storageMatch[1]);
+        if ($filePath && str_starts_with($filePath, $storagePath . DIRECTORY_SEPARATOR) && file_exists($filePath)) {
+            $mime = mime_content_type($filePath) ?: 'application/octet-stream';
+            $size = filesize($filePath);
+
+            header('Content-Type: ' . $mime);
+            header('Accept-Ranges: bytes');
+            header('Cache-Control: public, max-age=86400');
+
+            // Handle byte-range requests for video seeking
+            if (isset($_SERVER['HTTP_RANGE']) && preg_match('/bytes=(\d+)-(\d*)/', $_SERVER['HTTP_RANGE'], $rangeMatch)) {
+                $start = (int) $rangeMatch[1];
+                $end = !empty($rangeMatch[2]) ? (int) $rangeMatch[2] : $size - 1;
+                if ($start < $size && $end < $size) {
+                    http_response_code(206);
+                    header("Content-Range: bytes $start-$end/$size");
+                    header('Content-Length: ' . ($end - $start + 1));
+                    $fp = fopen($filePath, 'rb');
+                    fseek($fp, $start);
+                    echo fread($fp, $end - $start + 1);
+                    fclose($fp);
+                    exit;
+                }
+            }
+
+            header('Content-Length: ' . $size);
+            readfile($filePath);
+            exit;
+        }
+    }
+    http_response_code(404);
+    header('Content-Type: application/json');
+    echo json_encode(['success' => false, 'error' => ['message' => 'File not found', 'code' => 'NOT_FOUND']]);
+    exit;
+}
+
 // Set JSON content type
 header('Content-Type: application/json');
 
@@ -85,6 +126,11 @@ $router->get('/courses/:slug',    [$courseController, 'show']);
 
 // Video access (enrolled users)
 $router->get('/videos/:id',      [$courseController, 'getVideo']);
+
+// Health endpoint
+$router->get('/health', function () {
+    App\Helpers\Response::json(['status' => 'ok']);
+});
 
 // =============================================
 // User Dashboard (Phase 4)
