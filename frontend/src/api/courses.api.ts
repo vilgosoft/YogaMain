@@ -66,6 +66,7 @@ export interface MyLearningEnrollment {
   category_name: string | null;
   total_videos: number;
   completed_videos: number;
+  first_video_id: number | null;
 }
 
 export async function getMyLearning(): Promise<MyLearningEnrollment[]> {

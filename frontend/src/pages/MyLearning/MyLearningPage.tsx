@@ -47,7 +47,17 @@ export function MyLearningPage() {
           <div className={styles.grid}>
             {enrollments.map((enrollment) => (
               <article key={enrollment.id} className={styles.card}>
-                <div className={styles.imageWrap}>
+                <div
+                  className={styles.imageWrap}
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => {
+                    if (enrollment.first_video_id) {
+                      navigate(`/player/${enrollment.course_id}/${enrollment.first_video_id}`);
+                    } else {
+                      navigate(`/courses/${enrollment.slug}`);
+                    }
+                  }}
+                >
                   {enrollment.thumbnail_url ? (
                     <img src={enrollment.thumbnail_url} alt={enrollment.title} className={styles.image} />
                   ) : (
@@ -93,7 +103,13 @@ export function MyLearningPage() {
                     variant="outline"
                     size="sm"
                     fullWidth
-                    onClick={() => navigate(`/courses/${enrollment.slug}`)}
+                    onClick={() => {
+                      if (enrollment.first_video_id) {
+                        navigate(`/player/${enrollment.course_id}/${enrollment.first_video_id}`);
+                      } else {
+                        navigate(`/courses/${enrollment.slug}`);
+                      }
+                    }}
                   >
                     {enrollment.progress_pct > 0 ? 'Continue Learning' : 'Start Learning'}
                   </Button>

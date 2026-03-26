@@ -36,7 +36,8 @@ class Enrollment
             'SELECT e.*, c.title, c.slug, c.thumbnail_url, c.short_desc, c.difficulty, c.duration_hours,
                     c.is_free, cat.name as category_name,
                     (SELECT COUNT(*) FROM videos v WHERE v.course_id = c.id) as total_videos,
-                    (SELECT COUNT(*) FROM video_progress vp WHERE vp.user_id = :uid2 AND vp.video_id IN (SELECT v2.id FROM videos v2 WHERE v2.course_id = c.id) AND vp.is_completed = 1) as completed_videos
+                    (SELECT COUNT(*) FROM video_progress vp WHERE vp.user_id = :uid2 AND vp.video_id IN (SELECT v2.id FROM videos v2 WHERE v2.course_id = c.id) AND vp.is_completed = 1) as completed_videos,
+                    (SELECT v3.id FROM videos v3 WHERE v3.course_id = c.id ORDER BY v3.sort_order ASC, v3.id ASC LIMIT 1) as first_video_id
              FROM enrollments e
              JOIN courses c ON e.course_id = c.id
              LEFT JOIN categories cat ON c.category_id = cat.id
