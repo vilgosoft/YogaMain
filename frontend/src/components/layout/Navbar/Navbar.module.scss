@@ -13,6 +13,18 @@
   align-items: center;
   min-height: 120px;
   gap: $space-3;
+
+  @media (max-width: $bp-md) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'logo actions'
+      'drawer drawer';
+    align-items: center;
+    column-gap: $space-3;
+    row-gap: 0;
+    min-height: 7.25rem;
+  }
 }
 
 .logo {
@@ -22,6 +34,11 @@
   flex-shrink: 1;
   min-width: 0;
   text-decoration: none;
+
+  @media (max-width: $bp-md) {
+    grid-area: logo;
+    max-width: 100%;
+  }
 }
 
 .logoImg {
@@ -32,6 +49,12 @@
   object-fit: contain;
   object-position: left center;
   display: block;
+
+  @media (max-width: $bp-md) {
+    max-width: 100%;
+    /* Prominent on phones; grid reserves the right column for actions */
+    max-height: clamp(5.5rem, 22vw, 9rem);
+  }
 }
 
 [data-theme='dark'] .logoImg {
@@ -53,20 +76,42 @@
 
   @media (max-width: $bp-md) {
     display: none;
-    position: absolute;
-    top: 120px;
-    left: 0;
-    right: 0;
+    grid-area: drawer;
+    position: relative;
+    left: auto;
+    right: auto;
+    top: auto;
     flex-direction: column;
+    align-items: stretch;
     background: $color-bg;
     border-bottom: 1px solid $color-border;
     padding: $space-6 $space-4;
     gap: $space-4;
+    width: 100%;
 
     &--open {
       display: flex;
     }
   }
+}
+
+.navMobileAuth {
+  display: none;
+
+  @media (max-width: $bp-md) {
+    display: flex;
+    flex-direction: column;
+    gap: $space-2;
+    width: 100%;
+    margin-top: $space-2;
+    padding-top: $space-4;
+    border-top: 1px solid $color-border;
+  }
+}
+
+.navMobileAuthBtn {
+  width: 100%;
+  justify-content: center;
 }
 
 .link {
@@ -93,12 +138,23 @@
   display: flex;
   align-items: center;
   gap: $space-4;
+  flex-shrink: 0;
+
+  @media (max-width: $bp-md) {
+    grid-area: actions;
+    justify-self: end;
+    gap: $space-2;
+  }
 }
 
 .authBtns {
   display: flex;
   align-items: center;
   gap: $space-2;
+
+  @media (max-width: $bp-md) {
+    display: none;
+  }
 }
 
 .profileWrap {

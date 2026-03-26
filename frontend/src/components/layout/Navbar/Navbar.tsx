@@ -94,6 +94,33 @@ export function Navbar() {
               Admin
             </NavLink>
           )}
+
+          {!isAuthenticated && (
+            <div className={styles.navMobileAuth}>
+              <Button
+                variant="ghost"
+                size="sm"
+                className={styles.navMobileAuthBtn}
+                onClick={() => {
+                  navigate(ROUTES.LOGIN);
+                  closeMobile();
+                }}
+              >
+                Login
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                className={styles.navMobileAuthBtn}
+                onClick={() => {
+                  navigate(ROUTES.REGISTER);
+                  closeMobile();
+                }}
+              >
+                Sign Up
+              </Button>
+            </div>
+          )}
         </div>
 
         <div className={styles.actions}>
