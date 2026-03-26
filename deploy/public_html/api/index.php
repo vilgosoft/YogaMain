@@ -138,10 +138,57 @@ $router->get('/videos/:id', function (array $params) {
         App\Helpers\Response::error('Video not found', 'NOT_FOUND', 404);
     }
 
+    // Build a proper absolute URL for the video file
+    $storedPath = $video['original_file'] ?? '';
+    $videoUrl = '';
+
+    // Determine the site origin (e.g. https://tpslchecklist.in)
+    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https'
+        ? 'https' : 'http';
+    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+    $origin = $scheme . '://' . $host;
+
+    if (str_starts_with($storedPath, 'http://') || str_starts_with($storedPath, 'https://')) {
+        // Already a full URL
+        $videoUrl = $storedPath;
+    } elseif (str_starts_with($storedPath, '/uploads/')) {
+        // New format: /uploads/videos/vid_xxx.mp4 → full URL
+        $videoUrl = $origin . $storedPath;
+    } elseif (str_starts_with($storedPath, '/api/storage/')) {
+        // Old fallback format — try to find file in public_html/uploads instead
+        $filename = basename($storedPath);
+        $videoUrl = $origin . '/uploads/videos/' . $filename;
+    } elseif (str_starts_with($storedPath, './storage/')) {
+        // Old local dev format — try to find in public_html/uploads
+        $filename = basename($storedPath);
+        $videoUrl = $origin . '/uploads/videos/' . $filename;
+    } elseif ($storedPath) {
+        // Unknown format — try as-is with origin
+        $videoUrl = $origin . '/' . ltrim($storedPath, '/');
+    }
+
+    if (!$videoUrl) {
+        App\Helpers\Response::error('Video file path not configured', 'VIDEO_NOT_FOUND', 404);
+    }
+
+    // Verify the file actually exists on disk (for local paths)
+    $docRoot = $_SERVER['DOCUMENT_ROOT'] ?? '';
+    if ($docRoot && str_starts_with($storedPath, '/uploads/')) {
+        $diskPath = $docRoot . $storedPath;
+        if (!file_exists($diskPath)) {
+            App\Helpers\Response::error(
+                'Video file not found on server. Path: ' . $storedPath,
+                'FILE_NOT_FOUND',
+                404
+            );
+        }
+    }
+
     // Preview videos are publicly accessible
     if ($video['is_preview']) {
         App\Helpers\Response::json([
-            'video_url' => $video['original_file'],
+            'video_url' => $videoUrl,
             'title'     => $video['title'],
         ]);
         return;
@@ -171,7 +218,7 @@ $router->get('/videos/:id', function (array $params) {
     }
 
     App\Helpers\Response::json([
-        'video_url' => $video['original_file'],
+        'video_url' => $videoUrl,
         'title'     => $video['title'],
     ]);
 });

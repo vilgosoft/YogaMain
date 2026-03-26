@@ -201,5 +201,40 @@ if (is_dir($uploadsDir)) {
     echo "   ❌ NOT FOUND — create 'uploads' folder inside public_html/\n";
 }
 
+// 11. Video files check
+echo "\n11. Videos in Database:\n";
+if (isset($pdo)) {
+    try {
+        $rows = $pdo->query("SELECT id, course_id, title, original_file FROM videos ORDER BY id DESC LIMIT 10")->fetchAll(PDO::FETCH_ASSOC);
+        if (empty($rows)) {
+            echo "   No videos in database\n";
+        }
+        foreach ($rows as $row) {
+            echo "   Video #{$row['id']}: {$row['title']}\n";
+            echo "     DB path:   {$row['original_file']}\n";
+            // Check if file exists on disk
+            $storedPath = $row['original_file'];
+            if (str_starts_with($storedPath, '/uploads/')) {
+                $diskPath = $docRoot . $storedPath;
+                $exists = file_exists($diskPath);
+                echo "     Disk path: $diskPath\n";
+                echo "     Exists:    " . ($exists ? "✅ YES (" . round(filesize($diskPath)/1024/1024, 1) . " MB)" : "❌ NO — file missing!") . "\n";
+                echo "     URL:       https://{$_SERVER['HTTP_HOST']}{$storedPath}\n";
+            } elseif (str_starts_with($storedPath, './storage/') || str_starts_with($storedPath, '/api/storage/')) {
+                echo "     ⚠️ OLD PATH FORMAT — this video was uploaded with old code\n";
+                $filename = basename($storedPath);
+                $newPath = $docRoot . '/uploads/videos/' . $filename;
+                echo "     Check:     " . (file_exists($newPath) ? "✅ Found at new location" : "❌ NOT found at /uploads/videos/$filename") . "\n";
+            } else {
+                echo "     ⚠️ UNKNOWN PATH FORMAT\n";
+            }
+        }
+    } catch (\Throwable $e) {
+        echo "   Error: " . $e->getMessage() . "\n";
+    }
+} else {
+    echo "   Skipped — no DB connection\n";
+}
+
 echo "\n=== END OF DIAGNOSTICS ===\n";
 echo "\n⚠️ DELETE THIS FILE after debugging! It exposes server info.\n";

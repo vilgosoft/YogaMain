@@ -4,6 +4,17 @@
     Require all denied
 </FilesMatch>
 
+# Ensure correct MIME types for video files
+AddType video/mp4 .mp4
+AddType video/webm .webm
+AddType video/quicktime .mov
+AddType video/x-matroska .mkv
+
+# Allow byte-range requests (needed for video seeking)
+<IfModule mod_headers.c>
+    Header set Accept-Ranges bytes
+</IfModule>
+
 # Cache images and videos
 <IfModule mod_expires.c>
     ExpiresActive On
