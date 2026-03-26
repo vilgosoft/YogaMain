@@ -8,6 +8,52 @@
 header('Content-Type: text/plain; charset=utf-8');
 echo "=== Yoga LMS Deployment Diagnostics ===\n\n";
 
+// 0. Upload path detection test (simulates what FileUpload.php does)
+echo "0. Upload Path Detection:\n";
+echo "   Method 1 - \$_ENV['UPLOADS_PATH']:  " . ($_ENV['UPLOADS_PATH'] ?? '(not set)') . "\n";
+echo "   Method 2 - DOCUMENT_ROOT:          " . ($_SERVER['DOCUMENT_ROOT'] ?? '(not set)') . "\n";
+
+// Method 3: __DIR__ based (same logic as FileUpload.php)
+// This debug.php is at public_html/api/debug.php
+// FileUpload.php is at yoga-backend/src/Helpers/FileUpload.php
+// From FileUpload: dirname(__DIR__, 3) = yoga-backend, dirname(that) = domain root
+$apiDir = __DIR__;  // public_html/api
+$publicHtml = dirname($apiDir);  // public_html
+$domainRoot = dirname($publicHtml);  // domain root
+$backendDir = $domainRoot . '/yoga-backend';
+echo "   __DIR__ (api dir):      $apiDir\n";
+echo "   public_html:            $publicHtml\n";
+echo "   Domain root:            $domainRoot\n";
+echo "   yoga-backend:           $backendDir (exists: " . (is_dir($backendDir) ? 'YES' : 'NO') . ")\n";
+
+// Simulate FileUpload's __DIR__ detection
+$fileUploadDir = $backendDir . '/src/Helpers';
+echo "   FileUpload __DIR__:     $fileUploadDir\n";
+$fuDomainRoot = dirname($fileUploadDir, 3);  // = yoga-backend
+$fuDomainRoot = dirname($fuDomainRoot);       // = domain root
+echo "   FileUpload domain root: $fuDomainRoot\n";
+echo "   FileUpload would save to: $fuDomainRoot/public_html/uploads\n";
+echo "   public_html exists:     " . (is_dir($fuDomainRoot . '/public_html') ? '✅ YES' : '❌ NO') . "\n";
+echo "   uploads exists:         " . (is_dir($fuDomainRoot . '/public_html/uploads') ? '✅ YES' : '❌ NO') . "\n";
+
+// Try creating a test file to verify write permissions
+$testDir = $publicHtml . '/uploads';
+if (!is_dir($testDir)) {
+    echo "\n   Creating uploads directory... ";
+    echo (@mkdir($testDir, 0755, true) ? '✅ OK' : '❌ FAILED') . "\n";
+}
+if (is_dir($testDir)) {
+    $testFile = $testDir . '/test_write.txt';
+    $wrote = @file_put_contents($testFile, 'test');
+    if ($wrote !== false) {
+        echo "   Write test:             ✅ Can write to uploads/\n";
+        @unlink($testFile);
+    } else {
+        echo "   Write test:             ❌ CANNOT write to uploads/ — fix permissions to 755\n";
+    }
+}
+echo "\n";
+
 // 1. PHP Version
 echo "1. PHP Version: " . PHP_VERSION . "\n";
 if (version_compare(PHP_VERSION, '8.0.0', '<')) {

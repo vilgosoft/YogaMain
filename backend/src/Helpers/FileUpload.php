@@ -9,25 +9,42 @@ class FileUpload
 
     /**
      * Get the public uploads directory.
-     * On Hostinger: /home/u.../domains/site/public_html/uploads
-     * Locally: backend/storage (fallback)
+     *
+     * Detection order:
+     * 1. $_ENV['UPLOADS_PATH'] (explicit config from index.php)
+     * 2. $_SERVER['DOCUMENT_ROOT']/uploads (Apache standard)
+     * 3. __DIR__ based: yoga-backend is sibling of public_html on Hostinger
+     *    FileUpload.php is at yoga-backend/src/Helpers/ → go up 3 levels to get
+     *    the domain root, then append /public_html/uploads
+     * 4. ./storage (local dev fallback)
      */
     private static function getUploadsDir(): string
     {
-        // If UPLOADS_PATH is explicitly set, use it
+        // 1. Explicit env
         if (!empty($_ENV['UPLOADS_PATH'])) {
             return rtrim($_ENV['UPLOADS_PATH'], '/');
         }
 
-        // Auto-detect: find public_html relative to current working directory
-        // On Hostinger, the API entry is at public_html/api/index.php
-        // So public_html is 2 levels up from the api dir
-        $publicHtml = $_SERVER['DOCUMENT_ROOT'] ?? '';
-        if ($publicHtml && is_dir($publicHtml)) {
-            return $publicHtml . '/uploads';
+        // 2. DOCUMENT_ROOT
+        $docRoot = $_SERVER['DOCUMENT_ROOT'] ?? '';
+        if ($docRoot && is_dir($docRoot . '/uploads')) {
+            return $docRoot . '/uploads';
         }
 
-        // Fallback for local dev
+        // 3. Auto-detect: this file is at yoga-backend/src/Helpers/FileUpload.php
+        //    Go up 3 dirs → yoga-backend parent → look for public_html/uploads
+        $domainRoot = dirname(__DIR__, 3);  // = yoga-backend directory
+        $domainRoot = dirname($domainRoot); // = parent of yoga-backend (domain root)
+        $publicUploads = $domainRoot . '/public_html/uploads';
+        if (is_dir($domainRoot . '/public_html')) {
+            // Create uploads dir if it doesn't exist
+            if (!is_dir($publicUploads)) {
+                @mkdir($publicUploads, 0755, true);
+            }
+            return $publicUploads;
+        }
+
+        // 4. Fallback for local dev
         return ($_ENV['STORAGE_PATH'] ?? './storage');
     }
 
@@ -40,19 +57,30 @@ class FileUpload
             return rtrim($_ENV['UPLOADS_URL'], '/');
         }
 
-        // If using public_html/uploads, URL is just /uploads
-        $publicHtml = $_SERVER['DOCUMENT_ROOT'] ?? '';
-        if ($publicHtml && is_dir($publicHtml)) {
+        // If DOCUMENT_ROOT has an uploads dir, URL is /uploads
+        $docRoot = $_SERVER['DOCUMENT_ROOT'] ?? '';
+        if ($docRoot && is_dir($docRoot . '/uploads')) {
             return '/uploads';
         }
 
-        // Fallback for local dev (served through /api/storage proxy or similar)
+        // Auto-detect: check if public_html exists as sibling of yoga-backend
+        $domainRoot = dirname(__DIR__, 3);
+        $domainRoot = dirname($domainRoot);
+        if (is_dir($domainRoot . '/public_html')) {
+            return '/uploads';
+        }
+
+        // Fallback for local dev (served through /api/storage proxy)
         return '/api/storage';
     }
 
     public static function handleImage(array $file, string $subDir = 'thumbnails'): ?string
     {
-        if ($file['error'] !== UPLOAD_ERR_OK) return null;
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            $msg = self::getUploadErrorMessage($file['error']);
+            Response::error($msg, 'UPLOAD_FAILED', 400);
+            return null;
+        }
 
         $mime = mime_content_type($file['tmp_name']);
         if (!in_array($mime, self::$imageMimes, true)) {
@@ -68,7 +96,7 @@ class FileUpload
         $uploadsDir = self::getUploadsDir() . '/' . $subDir;
         if (!is_dir($uploadsDir)) {
             if (!@mkdir($uploadsDir, 0755, true)) {
-                Response::error('Failed to create upload directory: ' . $uploadsDir, 'UPLOAD_FAILED', 500);
+                Response::error('Failed to create directory: ' . $uploadsDir . ' — check permissions', 'UPLOAD_FAILED', 500);
                 return null;
             }
         }
@@ -78,27 +106,17 @@ class FileUpload
         $destination = $uploadsDir . '/' . $filename;
 
         if (!move_uploaded_file($file['tmp_name'], $destination)) {
-            Response::error('Failed to save image to: ' . $destination . '. Check folder permissions (need 755).', 'UPLOAD_FAILED', 500);
+            Response::error('Failed to save image to: ' . $destination . ' — check permissions (need 755)', 'UPLOAD_FAILED', 500);
             return null;
         }
 
-        // Return full URL path (accessible via browser)
         return self::getUrlPrefix() . '/' . $subDir . '/' . $filename;
     }
 
     public static function handleVideo(array $file): ?string
     {
         if ($file['error'] !== UPLOAD_ERR_OK) {
-            $errors = [
-                UPLOAD_ERR_INI_SIZE   => 'Video exceeds server upload limit. Contact hosting to increase upload_max_filesize.',
-                UPLOAD_ERR_FORM_SIZE  => 'Video exceeds form upload limit.',
-                UPLOAD_ERR_PARTIAL    => 'Video was only partially uploaded. Try again.',
-                UPLOAD_ERR_NO_FILE    => 'No video file was uploaded.',
-                UPLOAD_ERR_NO_TMP_DIR => 'Server temp directory missing.',
-                UPLOAD_ERR_CANT_WRITE => 'Failed to write video to disk. Check permissions.',
-                UPLOAD_ERR_EXTENSION  => 'Upload blocked by PHP extension.',
-            ];
-            $msg = $errors[$file['error']] ?? 'Upload error code: ' . $file['error'];
+            $msg = self::getUploadErrorMessage($file['error']);
             Response::error($msg, 'UPLOAD_FAILED', 400);
             return null;
         }
@@ -117,7 +135,7 @@ class FileUpload
         $uploadsDir = self::getUploadsDir() . '/videos';
         if (!is_dir($uploadsDir)) {
             if (!@mkdir($uploadsDir, 0755, true)) {
-                Response::error('Failed to create upload directory: ' . $uploadsDir, 'UPLOAD_FAILED', 500);
+                Response::error('Failed to create directory: ' . $uploadsDir . ' — check permissions', 'UPLOAD_FAILED', 500);
                 return null;
             }
         }
@@ -127,11 +145,10 @@ class FileUpload
         $destination = $uploadsDir . '/' . $filename;
 
         if (!move_uploaded_file($file['tmp_name'], $destination)) {
-            Response::error('Failed to save video to: ' . $destination . '. Check folder permissions (need 755).', 'UPLOAD_FAILED', 500);
+            Response::error('Failed to save video to: ' . $destination . ' — check permissions (need 755)', 'UPLOAD_FAILED', 500);
             return null;
         }
 
-        // Return full URL path
         return self::getUrlPrefix() . '/videos/' . $filename;
     }
 
@@ -149,5 +166,19 @@ class FileUpload
             'video/x-matroska'   => 'mkv',
         ];
         return $map[$mime] ?? 'bin';
+    }
+
+    private static function getUploadErrorMessage(int $code): string
+    {
+        $errors = [
+            UPLOAD_ERR_INI_SIZE   => 'File exceeds server upload limit (upload_max_filesize).',
+            UPLOAD_ERR_FORM_SIZE  => 'File exceeds form upload limit.',
+            UPLOAD_ERR_PARTIAL    => 'File was only partially uploaded. Try again.',
+            UPLOAD_ERR_NO_FILE    => 'No file was uploaded.',
+            UPLOAD_ERR_NO_TMP_DIR => 'Server temp directory missing.',
+            UPLOAD_ERR_CANT_WRITE => 'Failed to write to disk. Check permissions.',
+            UPLOAD_ERR_EXTENSION  => 'Upload blocked by PHP extension.',
+        ];
+        return $errors[$code] ?? 'Upload error code: ' . $code;
     }
 }
