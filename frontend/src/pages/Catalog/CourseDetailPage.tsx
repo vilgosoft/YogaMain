@@ -74,8 +74,15 @@ export function CourseDetailPage() {
       } else {
         window.location.href = result.redirect_url;
       }
-    } catch (err) {
-      showToast('error', getApiErrorMessage(err, 'Failed to initiate payment. Please try again.'));
+    } catch (err: any) {
+      const errorCode = err?.response?.data?.error?.code;
+      if (errorCode === 'ALREADY_ENROLLED') {
+        // Update local state so UI reflects enrolled status
+        setData((prev) => prev ? { ...prev, is_enrolled: true } : prev);
+        showToast('success', 'You are already enrolled! Start watching.');
+      } else {
+        showToast('error', getApiErrorMessage(err, 'Failed to initiate payment. Please try again.'));
+      }
     } finally {
       setPurchasing(false);
     }

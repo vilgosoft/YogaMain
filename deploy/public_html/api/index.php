@@ -198,7 +198,9 @@ $router->get('/videos/:id', function (array $params) {
     $authUser = $GLOBALS['auth_user'] ?? null;
     if (!$authUser) {
         // Try to parse JWT from Authorization header
-        $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+        $authHeader = $_SERVER['HTTP_AUTHORIZATION']
+            ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION']
+            ?? '';
         if (preg_match('/^Bearer\s+(.+)$/i', $authHeader, $matches)) {
             $jwt = new App\Services\JwtService();
             $decoded = $jwt->decode($matches[1]);
