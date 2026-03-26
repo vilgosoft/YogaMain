@@ -47,10 +47,7 @@ class Router
     public function dispatch(): void
     {
         $requestMethod = $_SERVER['REQUEST_METHOD'];
-        $requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-
-        // Strip /api prefix if present
-        $requestUri = preg_replace('#^/api#', '', $requestUri);
+        $requestUri = self::resolveRequestPath();
 
         // Remove trailing slash (except root)
         if ($requestUri !== '/') {
@@ -82,6 +79,43 @@ class Router
         }
 
         Response::error('Route not found', 'NOT_FOUND', 404);
+    }
+
+    /**
+     * Shared hosting (Apache/LiteSpeed) often rewrites /api/... to api/index.php and may
+     * leave REQUEST_URI as /api/index.php. Prefer PATH_INFO when set, then REDIRECT_URL.
+     */
+    private static function resolveRequestPath(): string
+    {
+        $pathInfo = $_SERVER['PATH_INFO'] ?? '';
+        if (is_string($pathInfo) && $pathInfo !== '' && $pathInfo !== '/') {
+            $path = $pathInfo;
+        } else {
+            $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+            $path = preg_replace('#^/api#', '', $path);
+        }
+
+        if ($path === '/index.php' || $path === '') {
+            foreach (['REDIRECT_URL', 'REDIRECT_URI'] as $key) {
+                $redirect = parse_url($_SERVER[$key] ?? '', PHP_URL_PATH);
+                if (is_string($redirect) && $redirect !== '' && $redirect !== '/') {
+                    $path = preg_replace('#^/api#', '', $redirect);
+                    break;
+                }
+            }
+        }
+
+        $path = preg_replace('#/index\.php$#', '', $path);
+
+        if ($path !== '/' && $path !== '' && !str_starts_with($path, '/')) {
+            $path = '/' . $path;
+        }
+
+        if ($path === '' || $path === '/') {
+            return '/';
+        }
+
+        return $path;
     }
 
     private function matchRoute(string $routePath, string $requestUri): array|false

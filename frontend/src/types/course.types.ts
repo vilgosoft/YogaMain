@@ -23,6 +23,8 @@ export interface Course {
   is_published: boolean;
   is_free: boolean;
   video_count?: number;
+  /** Present on catalog/featured when logged in; true if user is enrolled */
+  is_enrolled?: boolean;
   sort_order: number;
   created_at: string;
 }

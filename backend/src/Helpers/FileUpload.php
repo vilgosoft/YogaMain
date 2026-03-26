@@ -31,10 +31,9 @@ class FileUpload
             return $docRoot . '/uploads';
         }
 
-        // 3. Auto-detect: this file is at yoga-backend/src/Helpers/FileUpload.php
-        //    Go up 3 dirs → yoga-backend parent → look for public_html/uploads
-        $domainRoot = dirname(__DIR__, 3);  // = yoga-backend directory
-        $domainRoot = dirname($domainRoot); // = parent of yoga-backend (domain root)
+        // 3. Auto-detect: FileUpload.php is at yoga-backend/src/Helpers/
+        //    dirname(__DIR__, 3) = domain root (sibling folder to yoga-backend: …/tpslchecklist.in)
+        $domainRoot   = dirname(__DIR__, 3);
         $publicUploads = $domainRoot . '/public_html/uploads';
         if (is_dir($domainRoot . '/public_html')) {
             // Create uploads dir if it doesn't exist
@@ -63,9 +62,8 @@ class FileUpload
             return '/uploads';
         }
 
-        // Auto-detect: check if public_html exists as sibling of yoga-backend
+        // Auto-detect: domain root is 3 levels above Helpers (see getUploadsDir)
         $domainRoot = dirname(__DIR__, 3);
-        $domainRoot = dirname($domainRoot);
         if (is_dir($domainRoot . '/public_html')) {
             return '/uploads';
         }

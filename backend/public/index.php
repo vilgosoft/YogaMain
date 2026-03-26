@@ -126,6 +126,10 @@ $router->get('/courses/:slug',    [$courseController, 'show']);
 
 // Video access (enrolled users)
 $router->get('/videos/:id',      [$courseController, 'getVideo']);
+$router->post('/videos/:id/progress', [$courseController, 'saveVideoProgress'], [AuthMiddleware::class]);
+
+// Player page: full curriculum + progress
+$router->get('/player/course/:courseId', [$courseController, 'playerCurriculum'], [AuthMiddleware::class]);
 
 // Health endpoint
 $router->get('/health', function () {

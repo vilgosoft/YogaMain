@@ -1,0 +1,6 @@
+# Pass Authorization header to PHP (Apache/LiteSpeed; fixes missing Bearer on some hosts)
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteCond %{HTTP:Authorization} .
+  RewriteRule ^ - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+</IfModule>

@@ -14,7 +14,11 @@ type Status = 'polling' | 'success' | 'failed' | 'timeout';
 export function PaymentCallbackPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const merchantTxnId = searchParams.get('merchant_txn_id') || searchParams.get('transactionId') || '';
+  const merchantTxnId =
+    searchParams.get('merchant_txn_id') ||
+    searchParams.get('transactionId') ||
+    searchParams.get('txn') ||
+    '';
 
   const [status, setStatus] = useState<Status>('polling');
   const [, setPaymentData] = useState<PaymentStatusResponse | null>(null);

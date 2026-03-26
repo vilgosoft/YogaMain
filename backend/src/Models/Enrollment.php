@@ -21,6 +21,25 @@ class Enrollment
         return (bool) $stmt->fetch();
     }
 
+    /**
+     * @param int[] $courseIds
+     * @return int[] course IDs the user is enrolled in
+     */
+    public function getEnrolledCourseIds(int $userId, array $courseIds): array
+    {
+        $courseIds = array_values(array_unique(array_filter(array_map('intval', $courseIds))));
+        if ($courseIds === []) {
+            return [];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($courseIds), '?'));
+        $sql          = "SELECT course_id FROM enrollments WHERE user_id = ? AND course_id IN ({$placeholders})";
+        $stmt         = $this->db->prepare($sql);
+        $stmt->execute(array_merge([$userId], $courseIds));
+
+        return array_map('intval', array_column($stmt->fetchAll(), 'course_id'));
+    }
+
     public function create(int $userId, int $courseId): int
     {
         $stmt = $this->db->prepare(
@@ -48,22 +67,61 @@ class Enrollment
         return $stmt->fetchAll();
     }
 
+    /**
+     * Course % = average of each lesson's watch progress (0–100), so partial watching updates the bar.
+     * Milestones on the player UI use completed lesson count separately.
+     */
     public function updateProgress(int $userId, int $courseId): void
     {
-        // Calculate progress based on completed videos
         $stmt = $this->db->prepare(
-            'SELECT
-                (SELECT COUNT(*) FROM videos WHERE course_id = :cid) as total,
-                (SELECT COUNT(*) FROM video_progress vp
-                 JOIN videos v ON vp.video_id = v.id
-                 WHERE vp.user_id = :uid AND v.course_id = :cid2 AND vp.is_completed = 1) as completed'
+            'SELECT v.id, v.duration_sec,
+                    COALESCE(vp.watched_sec, 0) AS watched_sec,
+                    COALESCE(vp.is_completed, 0) AS is_completed
+             FROM videos v
+             LEFT JOIN video_progress vp ON vp.video_id = v.id AND vp.user_id = :uid
+             WHERE v.course_id = :cid
+             ORDER BY v.sort_order ASC, v.id ASC'
         );
-        $stmt->execute(['cid' => $courseId, 'uid' => $userId, 'cid2' => $courseId]);
-        $row = $stmt->fetch();
+        $stmt->execute(['uid' => $userId, 'cid' => $courseId]);
+        $rows = $stmt->fetchAll();
 
-        $pct = $row['total'] > 0 ? (int) round(($row['completed'] / $row['total']) * 100) : 0;
+        if ($rows === []) {
+            $u = $this->db->prepare('UPDATE enrollments SET progress_pct = 0 WHERE user_id = :uid AND course_id = :cid');
+            $u->execute(['uid' => $userId, 'cid' => $courseId]);
+
+            return;
+        }
+
+        $sum = 0;
+        foreach ($rows as $r) {
+            $dur  = $r['duration_sec'] !== null ? (int) $r['duration_sec'] : 0;
+            $w    = (int) $r['watched_sec'];
+            $done = (int) $r['is_completed'] === 1;
+
+            if ($done) {
+                $sum += 100;
+            } elseif ($dur > 0) {
+                $sum += min(100, (int) round(($w / $dur) * 100));
+            } else {
+                $sum += $w > 0 ? 5 : 0;
+            }
+        }
+
+        $pct = (int) round($sum / count($rows));
+        $pct = min(100, max(0, $pct));
 
         $stmt = $this->db->prepare('UPDATE enrollments SET progress_pct = :pct WHERE user_id = :uid AND course_id = :cid');
         $stmt->execute(['pct' => $pct, 'uid' => $userId, 'cid' => $courseId]);
+    }
+
+    public function getProgressPct(int $userId, int $courseId): int
+    {
+        $stmt = $this->db->prepare(
+            'SELECT progress_pct FROM enrollments WHERE user_id = :uid AND course_id = :cid LIMIT 1'
+        );
+        $stmt->execute(['uid' => $userId, 'cid' => $courseId]);
+        $row = $stmt->fetch();
+
+        return $row ? (int) $row['progress_pct'] : 0;
     }
 }

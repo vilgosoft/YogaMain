@@ -49,7 +49,7 @@ const features = [
 
 export function HomePage() {
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const [featuredCourses, setFeaturedCourses] = useState<Course[]>([]);
   const [featuredLoading, setFeaturedLoading] = useState(true);
   const [landingStats, setLandingStats] = useState<LandingStats | null>(null);
@@ -59,7 +59,7 @@ export function HomePage() {
       .then(setFeaturedCourses)
       .catch(() => {})
       .finally(() => setFeaturedLoading(false));
-  }, []);
+  }, [isAuthenticated, user?.id]);
 
   useEffect(() => {
     getLandingStats()

@@ -1,13 +1,14 @@
 .page {
-  min-height: calc(100vh - 80px);
+  min-height: calc(100vh - 72px);
   background: $color-bg;
+  padding-bottom: $space-10;
 }
 
 .loading {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 60vh;
+  min-height: 50vh;
 }
 
 .error {
@@ -15,91 +16,361 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 60vh;
+  min-height: 50vh;
   gap: $space-4;
   color: $color-text-muted;
+  text-align: center;
+  padding: $space-6;
 
   h2 {
     color: $color-text;
     font-size: $font-size-lg;
-    text-align: center;
     max-width: 400px;
   }
 }
 
-.playerArea {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: $space-4;
-}
-
-.videoWrapper {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  background: #000;
-  border-radius: $radius-lg;
-  overflow: hidden;
-}
-
-.video {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-
-.noVideo {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  color: rgba(255, 255, 255, 0.4);
-  gap: $space-3;
-  padding: $space-6;
-  text-align: center;
-
-  p {
-    max-width: 400px;
-    line-height: 1.5;
-  }
-}
-
-.retryBtn {
-  background: $color-primary;
-  color: #fff;
-  border: none;
-  padding: $space-2 $space-6;
-  border-radius: $radius-md;
-  cursor: pointer;
-  font-size: $font-size-sm;
-  margin-top: $space-2;
-
-  &:hover {
-    opacity: 0.9;
-  }
-}
-
-.videoInfo {
-  padding: $space-6 0;
-}
-
-.backLink {
+.textLink {
   display: inline-flex;
   align-items: center;
   gap: $space-1;
-  color: $color-primary;
+  color: $color-primary-light;
   font-size: $font-size-sm;
   text-decoration: none;
-  margin-bottom: $space-3;
 
   &:hover {
     text-decoration: underline;
   }
 }
 
-.videoTitle {
-  font-size: $font-size-xl;
+.topBar {
+  @include container;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-4;
+  padding-top: $space-4;
+  padding-bottom: $space-3;
+  flex-wrap: wrap;
+}
+
+.backOverview {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-1;
+  color: $color-primary-light;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.toggleSidebar {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  color: $color-text-secondary;
+  font-size: $font-size-sm;
+  padding: $space-2 $space-3;
+  border-radius: $radius-md;
+  cursor: pointer;
+  transition: border-color $transition-fast, color $transition-fast;
+
+  &:hover {
+    border-color: $color-border-light;
+    color: $color-text;
+  }
+}
+
+.layout {
+  @include container;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: $space-6;
+  align-items: start;
+
+  @include respond(lg) {
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: $space-8;
+  }
+}
+
+.layoutNoSidebar {
+  @include respond(lg) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.main {
+  min-width: 0;
+}
+
+.videoShell {
+  width: 100%;
+}
+
+.videoWrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #0a0a12;
+  border-radius: $radius-xl;
+  overflow: hidden;
+  border: 1px solid $color-border;
+  box-shadow: $shadow-md;
+}
+
+.video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.videoLoading {
+  position: absolute;
+  inset: 0;
+  @include flex-center;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 2;
+}
+
+.noVideo {
+  @include flex-col;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 200px;
+  color: $color-text-muted;
+  gap: $space-3;
+  padding: $space-6;
+  text-align: center;
+}
+
+.retryBtn {
+  background: $color-primary;
+  color: #fff;
+  border: none;
+  padding: $space-2 $space-5;
+  border-radius: $radius-md;
+  cursor: pointer;
+  font-size: $font-size-sm;
+
+  &:hover {
+    opacity: 0.92;
+  }
+}
+
+.progressSummary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: $space-4;
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+}
+
+.courseProgressBar {
+  height: 6px;
+  background: rgba($color-text-muted, 0.15);
+  border-radius: $radius-full;
+  margin-top: $space-2;
+  overflow: hidden;
+}
+
+.courseProgressFill {
+  height: 100%;
+  border-radius: $radius-full;
+  background: linear-gradient(90deg, $color-primary, lighten($color-primary, 12%));
+  transition: width $transition-base;
+}
+
+.lessonMeta {
+  margin-top: $space-6;
+}
+
+.categoryPill {
+  display: inline-block;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-primary-light;
+  margin-bottom: $space-2;
+}
+
+.lessonTitle {
+  font-family: $font-heading;
+  font-size: $font-size-2xl;
   font-weight: $font-weight-bold;
   color: $color-text;
+  line-height: $line-height-tight;
+  margin: 0 0 $space-2;
+}
+
+.lessonDesc {
+  margin: 0;
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+  line-height: $line-height-relaxed;
+  max-width: 720px;
+}
+
+.lessonNav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: $space-8;
+  padding-top: $space-4;
+  border-top: 1px solid $color-border;
+}
+
+.navBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-1;
+  background: none;
+  border: none;
+  color: $color-primary-light;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  cursor: pointer;
+  padding: $space-2;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.sidebar {
+  @include respond(lg) {
+    position: sticky;
+    top: $space-20;
+  }
+}
+
+.sidebarClosed {
+  display: none;
+}
+
+.sidebarOpen {
+  display: block;
+}
+
+.sidebarTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  color: $color-text;
+  margin: 0 0 $space-2;
+}
+
+.sidebarCourse {
+  margin-bottom: $space-1;
+}
+
+.sidebarCourseName {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-secondary;
+}
+
+.sidebarStats {
+  margin: 0 0 $space-4;
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+}
+
+.lessonList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  @include flex-col;
+  gap: $space-2;
+  max-height: min(70vh, 640px);
+  overflow-y: auto;
+}
+
+.lessonItem {
+  width: 100%;
+  text-align: left;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  padding: $space-3 $space-3 $space-2;
+  cursor: pointer;
+  transition: border-color $transition-fast, background $transition-fast;
+  position: relative;
+
+  &:hover {
+    border-color: $color-border-light;
+  }
+}
+
+.lessonItemActive {
+  border-color: rgba($color-primary, 0.55);
+  background: rgba($color-primary, 0.08);
+  box-shadow: inset 3px 0 0 $color-primary;
+}
+
+.lessonItemTop {
+  display: flex;
+  align-items: flex-start;
+  gap: $space-2;
+}
+
+.lessonPlayIcon {
+  color: $color-primary-light;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.lessonItemTitle {
+  flex: 1;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text;
+  line-height: $line-height-tight;
+}
+
+.freeTag {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: $font-weight-bold;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: $color-accent;
+  background: rgba($color-accent, 0.12);
+  padding: 2px $space-2;
+  border-radius: $radius-sm;
+}
+
+.lessonItemMeta {
+  font-size: $font-size-xs;
+  color: $color-text-subtle;
+  margin: $space-1 0 0 24px;
+}
+
+.lessonMiniBar {
+  height: 3px;
+  background: rgba($color-text-muted, 0.2);
+  border-radius: $radius-full;
+  margin: $space-2 0 0 24px;
+  overflow: hidden;
+}
+
+.lessonMiniFill {
+  height: 100%;
+  border-radius: $radius-full;
+  background: linear-gradient(90deg, $color-primary, lighten($color-primary, 8%));
+  transition: width $transition-base;
+}
+
+.lessonPct {
+  display: block;
+  font-size: 10px;
+  font-weight: $font-weight-semibold;
+  color: $color-text-muted;
+  margin: $space-1 0 0 24px;
 }

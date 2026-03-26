@@ -8,11 +8,13 @@ import { CategoryFilter } from '@/components/course/CategoryFilter/CategoryFilte
 import { Input } from '@/components/ui/Input/Input';
 import { Pagination } from '@/components/ui/Pagination/Pagination';
 import { PageWrapper } from '@/components/layout/PageWrapper/PageWrapper';
+import { useAuth } from '@/hooks/useAuth';
 import { HiOutlineMagnifyingGlass } from 'react-icons/hi2';
 import styles from './CatalogPage.module.scss';
 
 export function CatalogPage() {
   const navigate = useNavigate();
+  const { isAuthenticated, user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [courses, setCourses] = useState<Course[]>([]);
@@ -41,7 +43,7 @@ export function CatalogPage() {
     } finally {
       setLoading(false);
     }
-  }, [search, categoryId]);
+  }, [search, categoryId, isAuthenticated, user?.id]);
 
   useEffect(() => {
     getCategories().then(setCategories).catch(() => {});

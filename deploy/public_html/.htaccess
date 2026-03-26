@@ -4,8 +4,9 @@ RewriteEngine On
 RewriteCond %{HTTPS} off
 RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [R=301,L]
 
-# If the request is for /api, let the api/ subfolder handle it
-RewriteRule ^api(/.*)?$ api/index.php [L,QSA]
+# API: pass path as PATH_INFO so PHP router sees /player/... not only /api/index.php
+RewriteRule ^api/?$ api/index.php [L,QSA]
+RewriteRule ^api/(.+)$ api/index.php/$1 [L,QSA]
 
 # If the request is for an existing file or directory, serve it directly
 RewriteCond %{REQUEST_FILENAME} -f [OR]

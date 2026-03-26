@@ -31,3 +31,12 @@ export function formatVideoTime(seconds: number | null): string {
   const s = Math.floor(seconds % 60);
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
+
+/** Sum of lesson lengths for course sidebar (e.g. "2h 15m"). */
+export function formatTotalDurationSeconds(totalSeconds: number): string {
+  if (totalSeconds <= 0) return '0m';
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  if (h > 0) return `${h}h ${m}m`;
+  return `${m}m`;
+}

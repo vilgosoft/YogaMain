@@ -73,3 +73,47 @@ export async function getMyLearning(): Promise<MyLearningEnrollment[]> {
   const res = await client.get<ApiResponse<MyLearningEnrollment[]>>('/my-learning');
   return res.data.data!;
 }
+
+// Player page (enrolled)
+export interface PlayerLesson {
+  id: number;
+  title: string;
+  description: string | null;
+  duration_sec: number | null;
+  sort_order: number;
+  is_preview: boolean;
+  watched_sec: number;
+  is_completed: boolean;
+  lesson_progress_pct: number;
+}
+
+export interface PlayerCurriculumResponse {
+  course: {
+    id: number;
+    title: string;
+    slug: string;
+    category_name: string | null;
+    short_desc: string | null;
+  };
+  lessons: PlayerLesson[];
+  completed_lessons: number;
+  total_lessons: number;
+  course_progress_pct: number;
+  total_duration_sec: number;
+}
+
+export async function getPlayerCurriculum(courseId: number): Promise<PlayerCurriculumResponse> {
+  const res = await client.get<ApiResponse<PlayerCurriculumResponse>>(`/player/course/${courseId}`);
+  return res.data.data!;
+}
+
+export async function postVideoProgress(
+  videoId: number,
+  body: { watched_sec: number; mark_complete?: boolean }
+): Promise<{ course_progress_pct: number }> {
+  const res = await client.post<ApiResponse<{ course_progress_pct: number }>>(
+    `/videos/${videoId}/progress`,
+    body
+  );
+  return res.data.data!;
+}

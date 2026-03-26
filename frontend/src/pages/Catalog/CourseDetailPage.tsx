@@ -29,7 +29,7 @@ import styles from './CourseDetailPage.module.scss';
 export function CourseDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const { showToast } = useToast();
 
   const [data, setData] = useState<CourseDetailResponse | null>(null);
@@ -51,7 +51,7 @@ export function CourseDetailPage() {
         navigate(ROUTES.COURSES);
       })
       .finally(() => setLoading(false));
-  }, [slug]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [slug, isAuthenticated, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleBuy = async () => {
     if (!data) return;

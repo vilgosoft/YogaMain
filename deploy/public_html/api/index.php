@@ -385,6 +385,9 @@ $router->get('/videos/:id', function (array $params) {
     ]);
 });
 
+$router->post('/videos/:id/progress', [$courseController, 'saveVideoProgress'], [AuthMiddleware::class]);
+$router->get('/player/course/:courseId', [$courseController, 'playerCurriculum'], [AuthMiddleware::class]);
+
 // =============================================
 // User Dashboard
 // =============================================

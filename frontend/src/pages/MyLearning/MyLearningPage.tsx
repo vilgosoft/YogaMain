@@ -96,7 +96,10 @@ export function MyLearningPage() {
                         style={{ width: `${enrollment.progress_pct}%` }}
                       />
                     </div>
-                    <span className={styles.progressText}>{enrollment.progress_pct}% complete</span>
+                    <span className={styles.progressText}>
+                      {enrollment.progress_pct}% complete · {enrollment.completed_videos}/
+                      {enrollment.total_videos} lessons
+                    </span>
                   </div>
 
                   <Button
