@@ -54,6 +54,24 @@ require_once $backendDir . '/vendor/autoload.php';
 $dotenv = Dotenv\Dotenv::createImmutable($backendDir);
 $dotenv->safeLoad();
 
+// === EXPLICITLY SET UPLOAD PATHS FOR HOSTINGER ===
+// public_html is one level up from this api/ directory
+$publicHtml = dirname(__DIR__);  // /home/u602160284/domains/tpslchecklist.in/public_html
+$_ENV['UPLOADS_PATH'] = $publicHtml . '/uploads';
+$_ENV['UPLOADS_URL']  = '/uploads';
+
+// Ensure uploads directories exist
+$uploadDirs = [
+    $publicHtml . '/uploads',
+    $publicHtml . '/uploads/thumbnails',
+    $publicHtml . '/uploads/videos',
+];
+foreach ($uploadDirs as $dir) {
+    if (!is_dir($dir)) {
+        @mkdir($dir, 0755, true);
+    }
+}
+
 // Handle CORS
 App\Config\Cors::handle();
 

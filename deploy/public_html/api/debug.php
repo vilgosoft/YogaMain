@@ -182,23 +182,38 @@ if ($uploadBytes < 100 * 1024 * 1024) {
 // 10. Uploads directory
 echo "\n10. Uploads Directory:\n";
 $docRoot = $_SERVER['DOCUMENT_ROOT'] ?? dirname(__DIR__);
-$uploadsDir = $docRoot . '/uploads';
-echo "   Document root:  $docRoot\n";
+$publicHtml = dirname(__DIR__); // Reliable: relative to this script
+$uploadsDir = $publicHtml . '/uploads';
+echo "   DOCUMENT_ROOT:  $docRoot\n";
+echo "   public_html:    $publicHtml\n";
 echo "   Uploads path:   $uploadsDir\n";
+echo "   __DIR__ (api):  " . __DIR__ . "\n";
 if (is_dir($uploadsDir)) {
-    echo "   ✅ Directory exists\n";
+    echo "   ✅ uploads/ directory exists\n";
     echo "   Writable: " . (is_writable($uploadsDir) ? "✅ yes" : "❌ NO — fix permissions to 755") . "\n";
     $subs = ['thumbnails', 'videos'];
     foreach ($subs as $sub) {
         $subPath = $uploadsDir . '/' . $sub;
         if (is_dir($subPath)) {
-            echo "   ✅ $sub/ exists\n";
+            $files = glob($subPath . '/*');
+            echo "   ✅ $sub/ exists (" . count($files) . " files)\n";
+            foreach (array_slice($files, 0, 5) as $f) {
+                echo "      - " . basename($f) . " (" . round(filesize($f)/1024, 1) . " KB)\n";
+            }
         } else {
-            echo "   ⏳ $sub/ will be created on first upload\n";
+            echo "   ⏳ $sub/ does not exist yet (will be created on first upload)\n";
         }
     }
 } else {
-    echo "   ❌ NOT FOUND — create 'uploads' folder inside public_html/\n";
+    echo "   ❌ uploads/ NOT FOUND — creating it now...\n";
+    if (@mkdir($uploadsDir, 0755, true)) {
+        echo "   ✅ Created successfully!\n";
+        @mkdir($uploadsDir . '/thumbnails', 0755, true);
+        @mkdir($uploadsDir . '/videos', 0755, true);
+        echo "   ✅ Created thumbnails/ and videos/ subdirectories\n";
+    } else {
+        echo "   ❌ Failed to create. Please create 'uploads' folder inside public_html/ manually.\n";
+    }
 }
 
 // 11. Video files check

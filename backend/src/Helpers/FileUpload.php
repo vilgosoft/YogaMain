@@ -67,7 +67,10 @@ class FileUpload
 
         $uploadsDir = self::getUploadsDir() . '/' . $subDir;
         if (!is_dir($uploadsDir)) {
-            mkdir($uploadsDir, 0755, true);
+            if (!@mkdir($uploadsDir, 0755, true)) {
+                Response::error('Failed to create upload directory: ' . $uploadsDir, 'UPLOAD_FAILED', 500);
+                return null;
+            }
         }
 
         $ext = self::getExtension($mime);
@@ -75,7 +78,7 @@ class FileUpload
         $destination = $uploadsDir . '/' . $filename;
 
         if (!move_uploaded_file($file['tmp_name'], $destination)) {
-            Response::error('Failed to save image. Check folder permissions.', 'UPLOAD_FAILED', 500);
+            Response::error('Failed to save image to: ' . $destination . '. Check folder permissions (need 755).', 'UPLOAD_FAILED', 500);
             return null;
         }
 
@@ -113,7 +116,10 @@ class FileUpload
 
         $uploadsDir = self::getUploadsDir() . '/videos';
         if (!is_dir($uploadsDir)) {
-            mkdir($uploadsDir, 0755, true);
+            if (!@mkdir($uploadsDir, 0755, true)) {
+                Response::error('Failed to create upload directory: ' . $uploadsDir, 'UPLOAD_FAILED', 500);
+                return null;
+            }
         }
 
         $ext = self::getExtension($mime);
@@ -121,7 +127,7 @@ class FileUpload
         $destination = $uploadsDir . '/' . $filename;
 
         if (!move_uploaded_file($file['tmp_name'], $destination)) {
-            Response::error('Failed to save video. Check folder permissions.', 'UPLOAD_FAILED', 500);
+            Response::error('Failed to save video to: ' . $destination . '. Check folder permissions (need 755).', 'UPLOAD_FAILED', 500);
             return null;
         }
 
