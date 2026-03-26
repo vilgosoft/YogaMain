@@ -128,8 +128,53 @@ $router->get('/courses',          [$courseController, 'index']);
 $router->get('/categories',       [$courseController, 'categories']);
 $router->get('/courses/:slug',    [$courseController, 'show']);
 
-// Video access (enrolled users)
-$router->get('/videos/:id',      [$courseController, 'getVideo']);
+// Video access (enrolled users) — inline to avoid deploy sync issues
+$router->get('/videos/:id', function (array $params) {
+    $videoId = (int) $params['id'];
+    $videoModel = new App\Models\Video();
+    $video = $videoModel->findById($videoId);
+
+    if (!$video) {
+        App\Helpers\Response::error('Video not found', 'NOT_FOUND', 404);
+    }
+
+    // Preview videos are publicly accessible
+    if ($video['is_preview']) {
+        App\Helpers\Response::json([
+            'video_url' => $video['original_file'],
+            'title'     => $video['title'],
+        ]);
+        return;
+    }
+
+    // Non-preview videos require authentication + enrollment
+    $authUser = $GLOBALS['auth_user'] ?? null;
+    if (!$authUser) {
+        // Try to parse JWT from Authorization header
+        $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+        if (preg_match('/^Bearer\s+(.+)$/i', $authHeader, $matches)) {
+            $jwt = new App\Services\JwtService();
+            $decoded = $jwt->decode($matches[1]);
+            if ($decoded) {
+                $authUser = ['id' => $decoded->sub, 'email' => $decoded->email, 'role' => $decoded->role];
+            }
+        }
+    }
+
+    if (!$authUser) {
+        App\Helpers\Response::error('Authentication required', 'UNAUTHORIZED', 401);
+    }
+
+    $enrollmentModel = new App\Models\Enrollment();
+    if (!$enrollmentModel->isEnrolled($authUser['id'], $video['course_id'])) {
+        App\Helpers\Response::error('You must be enrolled in this course', 'FORBIDDEN', 403);
+    }
+
+    App\Helpers\Response::json([
+        'video_url' => $video['original_file'],
+        'title'     => $video['title'],
+    ]);
+});
 
 // =============================================
 // User Dashboard
