@@ -45,6 +45,24 @@
   gap: $space-5;
 }
 
+.forgotRow {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: -$space-3;
+}
+
+.forgotLink {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-primary-light;
+  text-decoration: none;
+
+  &:hover {
+    color: $color-secondary;
+    text-decoration: underline;
+  }
+}
+
 .switchAuth {
   margin-top: $space-6;
   font-size: $font-size-sm;

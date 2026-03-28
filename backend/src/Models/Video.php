@@ -45,14 +45,14 @@ class Video
             'duration_sec'     => $data['duration_sec'] ?? null,
             'sort_order'       => $data['sort_order'] ?? 0,
             'is_preview'       => $data['is_preview'] ?? 0,
-            'transcode_status' => 'pending',
+            'transcode_status' => $data['transcode_status'] ?? 'pending',
         ]);
         return (int) $this->db->lastInsertId();
     }
 
     public function update(int $id, array $data): void
     {
-        $allowed = ['title', 'description', 'sort_order', 'is_preview', 'hls_path', 'duration_sec', 'transcode_status'];
+        $allowed = ['title', 'description', 'sort_order', 'is_preview', 'hls_path', 'duration_sec', 'transcode_status', 'original_file'];
         $fields = [];
         $params = ['id' => $id];
 

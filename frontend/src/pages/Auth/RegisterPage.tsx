@@ -115,6 +115,7 @@ export function RegisterPage() {
             name="password"
             placeholder="Min 8 characters"
             icon={<HiOutlineLockClosed />}
+            passwordToggle
             value={form.password}
             onChange={(e) => setForm({ ...form, password: e.target.value })}
             error={errors.password}
@@ -126,6 +127,7 @@ export function RegisterPage() {
             name="confirmPassword"
             placeholder="Repeat your password"
             icon={<HiOutlineLockClosed />}
+            passwordToggle
             value={form.confirmPassword}
             onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
             error={errors.confirmPassword}

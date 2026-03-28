@@ -14,9 +14,12 @@ const STORAGE_KEY = 'yogalms-theme';
 
 function readStoredTheme(): Theme {
   try {
-    return localStorage.getItem(STORAGE_KEY) === 'light' ? 'light' : 'dark';
+    const v = localStorage.getItem(STORAGE_KEY);
+    if (v === 'dark') return 'dark';
+    if (v === 'light') return 'light';
+    return 'light';
   } catch {
-    return 'dark';
+    return 'light';
   }
 }
 

@@ -70,6 +70,8 @@ $authController = new App\Controllers\AuthController();
 
 $router->post('/auth/register', [$authController, 'register']);
 $router->post('/auth/login',    [$authController, 'login']);
+$router->post('/auth/forgot-password', [$authController, 'forgotPassword']);
+$router->post('/auth/reset-password',  [$authController, 'resetPassword']);
 $router->post('/auth/refresh',  [$authController, 'refresh']);
 $router->post('/auth/logout',   [$authController, 'logout'], [AuthMiddleware::class]);
 $router->get('/auth/me',        [$authController, 'me'],     [AuthMiddleware::class]);

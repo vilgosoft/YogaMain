@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Helpers\Response;
 use App\Models\User;
 use App\Models\RefreshToken;
+use App\Models\PasswordResetToken;
 use App\Services\JwtService;
 use App\Services\ValidationService;
 
@@ -120,6 +121,83 @@ class AuthController
         ], 'Login successful');
     }
 
+    public function forgotPassword(): void
+    {
+        $data = json_decode(file_get_contents('php://input'), true) ?? [];
+
+        $valid = $this->validator->validate($data, [
+            'email' => ['required', 'email'],
+        ]);
+
+        if (!$valid) {
+            Response::error('Validation failed', 'VALIDATION_ERROR', 422, $this->validator->getErrors());
+        }
+
+        $email = strtolower(trim($data['email']));
+        $user = $this->userModel->findByEmail($email);
+
+        if ($user && (int) $user['is_active'] === 1) {
+            $base = rtrim((string) ($_ENV['FRONTEND_URL'] ?? $_ENV['APP_URL'] ?? ''), '/');
+            if ($base !== '') {
+                $plain = bin2hex(random_bytes(32));
+                $tokenHash = hash('sha256', $plain);
+                $expires = (new \DateTimeImmutable('+1 hour'))->format('Y-m-d H:i:s');
+                try {
+                    $prt = new PasswordResetToken();
+                    $prt->create((int) $user['id'], $tokenHash, $expires);
+                } catch (\Throwable $e) {
+                    error_log('password_reset_tokens: ' . $e->getMessage());
+                    Response::error(
+                        'Password reset is temporarily unavailable. Ensure migration 003_password_reset_tokens.sql was applied.',
+                        'SERVER_ERROR',
+                        503
+                    );
+                }
+                $link = $base . '/reset-password?token=' . urlencode($plain);
+                $this->sendPasswordResetEmail((string) $user['email'], $link);
+            } else {
+                error_log('Forgot password: set FRONTEND_URL (or APP_URL) in .env so reset links can be built.');
+            }
+        }
+
+        $message = 'If an account exists for this email, you will receive password reset instructions shortly.';
+        Response::json(['message' => $message], $message);
+    }
+
+    public function resetPassword(): void
+    {
+        $data = json_decode(file_get_contents('php://input'), true) ?? [];
+
+        $valid = $this->validator->validate($data, [
+            'token'    => ['required', ['min', 10]],
+            'password' => ['required', ['min', 8]],
+        ]);
+
+        if (!$valid) {
+            Response::error('Validation failed', 'VALIDATION_ERROR', 422, $this->validator->getErrors());
+        }
+
+        $plain = trim((string) $data['token']);
+        $tokenHash = hash('sha256', $plain);
+        $prt = new PasswordResetToken();
+        $row = $prt->findValidByTokenHash($tokenHash);
+
+        if (!$row) {
+            Response::error(
+                'This reset link is invalid or has expired. Please request a new one.',
+                'INVALID_TOKEN',
+                400
+            );
+        }
+
+        $newHash = password_hash($data['password'], PASSWORD_BCRYPT, ['cost' => 12]);
+        $this->userModel->updatePasswordHash($row['user_id'], $newHash);
+        $prt->deleteByTokenHash($tokenHash);
+        $this->refreshTokenModel->revokeAllForUser($row['user_id']);
+
+        Response::json(null, 'Password updated. You can sign in with your new password.');
+    }
+
     public function refresh(): void
     {
         $refreshToken = $_COOKIE['refresh_token'] ?? null;
@@ -202,6 +280,36 @@ class AuthController
         }
 
         Response::json($user);
+    }
+
+    private function sendPasswordResetEmail(string $to, string $resetLink): void
+    {
+        $fromName = $_ENV['MAIL_FROM_NAME'] ?? 'SAI ISHANI Yogashala';
+        $fromAddr = $_ENV['MAIL_FROM'] ?? 'noreply@localhost';
+        $subject = 'Reset your password';
+        $safeLink = htmlspecialchars($resetLink, ENT_QUOTES, 'UTF-8');
+        $html = '<p>Hi,</p>'
+            . '<p>We received a request to reset your password. This link is valid for <strong>1 hour</strong>:</p>'
+            . '<p><a href="' . $safeLink . '">Reset your password</a></p>'
+            . '<p>If you did not request this, you can ignore this email.</p>';
+
+        $headers = "MIME-Version: 1.0\r\n"
+            . "Content-type: text/html; charset=UTF-8\r\n"
+            . 'From: ' . $this->encodeHeaderName($fromName) . " <{$fromAddr}>\r\n";
+
+        $ok = @mail($to, $subject, $html, $headers);
+        if (!$ok) {
+            error_log('Password reset email could not be sent via mail() to ' . $to);
+        }
+    }
+
+    private function encodeHeaderName(string $name): string
+    {
+        if (preg_match('/[^\x20-\x7E]/', $name)) {
+            return '=?UTF-8?B?' . base64_encode($name) . '?=';
+        }
+
+        return $name;
     }
 
     private function setRefreshCookie(string $token): void

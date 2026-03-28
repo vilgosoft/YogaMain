@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Helpers\Response;
 use App\Helpers\FileUpload;
+use App\Helpers\GoogleDriveVideo;
 use App\Models\Video;
 use App\Models\Course;
 use App\Services\ValidationService;
@@ -52,26 +53,59 @@ class AdminVideoController
             Response::error('Course not found', 'NOT_FOUND', 404);
         }
 
-        // Handle video file upload
-        if (empty($_FILES['video']) || $_FILES['video']['error'] !== UPLOAD_ERR_OK) {
-            Response::error('Video file is required', 'VALIDATION_ERROR', 422, ['video' => 'Please upload a video file']);
-        }
+        $videoUrl = trim((string) ($data['video_url'] ?? ''));
+        $storedPath = null;
+        $transcodeStatus = 'ready';
 
-        $videoPath = FileUpload::handleVideo($_FILES['video']);
-        if (!$videoPath) {
-            Response::error('Video upload failed', 'UPLOAD_FAILED', 500);
+        if ($videoUrl !== '') {
+            if (!filter_var($videoUrl, FILTER_VALIDATE_URL)) {
+                Response::error('Invalid video URL', 'VALIDATION_ERROR', 422, ['video_url' => 'Enter a valid URL']);
+            }
+            $host = parse_url($videoUrl, PHP_URL_HOST);
+            if (!is_string($host) || !str_contains($host, 'drive.google.com')) {
+                Response::error(
+                    'Only Google Drive links are supported',
+                    'VALIDATION_ERROR',
+                    422,
+                    ['video_url' => 'Use a Google Drive share link (drive.google.com)']
+                );
+            }
+            if (GoogleDriveVideo::extractFileId($videoUrl) === null) {
+                Response::error(
+                    'Could not read the file ID from this link',
+                    'VALIDATION_ERROR',
+                    422,
+                    ['video_url' => 'Open the file in Drive → Share → copy link (contains /file/d/...)']
+                );
+            }
+            $storedPath = $videoUrl;
+        } elseif (!empty($_FILES['video']) && $_FILES['video']['error'] === UPLOAD_ERR_OK) {
+            $path = FileUpload::handleVideo($_FILES['video']);
+            if (!$path) {
+                Response::error('Video upload failed', 'UPLOAD_FAILED', 500);
+            }
+            $storedPath = $path;
+            $transcodeStatus = 'pending';
+        } else {
+            Response::error(
+                'Google Drive URL is required',
+                'VALIDATION_ERROR',
+                422,
+                ['video_url' => 'Paste your Google Drive video share link']
+            );
         }
 
         $sortOrder = $this->model->getNextSortOrder((int) $data['course_id']);
 
         $id = $this->model->create([
-            'course_id'     => (int) $data['course_id'],
-            'title'         => htmlspecialchars($data['title'], ENT_QUOTES, 'UTF-8'),
-            'description'   => $data['description'] ?? null,
-            'original_file' => $videoPath,
-            'duration_sec'  => !empty($data['duration_sec']) ? (int) $data['duration_sec'] : null,
-            'sort_order'    => (int) ($data['sort_order'] ?? $sortOrder),
-            'is_preview'    => (int) ($data['is_preview'] ?? 0),
+            'course_id'        => (int) $data['course_id'],
+            'title'            => htmlspecialchars($data['title'], ENT_QUOTES, 'UTF-8'),
+            'description'      => $data['description'] ?? null,
+            'original_file'    => $storedPath,
+            'duration_sec'     => !empty($data['duration_sec']) ? (int) $data['duration_sec'] : null,
+            'sort_order'       => (int) ($data['sort_order'] ?? $sortOrder),
+            'is_preview'       => (int) ($data['is_preview'] ?? 0),
+            'transcode_status' => $transcodeStatus,
         ]);
 
         $video = $this->model->findById($id);
@@ -90,10 +124,36 @@ class AdminVideoController
         $data = json_decode(file_get_contents('php://input'), true) ?? [];
 
         $updateData = [];
-        if (isset($data['title'])) $updateData['title'] = htmlspecialchars($data['title'], ENT_QUOTES, 'UTF-8');
-        if (array_key_exists('description', $data)) $updateData['description'] = $data['description'];
-        if (isset($data['sort_order'])) $updateData['sort_order'] = (int) $data['sort_order'];
-        if (isset($data['is_preview'])) $updateData['is_preview'] = (int) $data['is_preview'];
+        if (isset($data['title'])) {
+            $updateData['title'] = htmlspecialchars($data['title'], ENT_QUOTES, 'UTF-8');
+        }
+        if (array_key_exists('description', $data)) {
+            $updateData['description'] = $data['description'];
+        }
+        if (isset($data['sort_order'])) {
+            $updateData['sort_order'] = (int) $data['sort_order'];
+        }
+        if (isset($data['is_preview'])) {
+            $updateData['is_preview'] = (int) $data['is_preview'];
+        }
+        if (isset($data['video_url'])) {
+            $url = trim((string) $data['video_url']);
+            if ($url === '') {
+                Response::error('video_url cannot be empty', 'VALIDATION_ERROR', 422);
+            }
+            if (!filter_var($url, FILTER_VALIDATE_URL)) {
+                Response::error('Invalid video URL', 'VALIDATION_ERROR', 422);
+            }
+            $host = parse_url($url, PHP_URL_HOST);
+            if (!is_string($host) || !str_contains($host, 'drive.google.com')) {
+                Response::error('Only Google Drive links are supported', 'VALIDATION_ERROR', 422);
+            }
+            if (GoogleDriveVideo::extractFileId($url) === null) {
+                Response::error('Could not read file ID from Google Drive link', 'VALIDATION_ERROR', 422);
+            }
+            $updateData['original_file'] = $url;
+            $updateData['transcode_status'] = 'ready';
+        }
 
         $this->model->update($id, $updateData);
 
@@ -110,9 +170,9 @@ class AdminVideoController
             Response::error('Video not found', 'NOT_FOUND', 404);
         }
 
-        // Delete the original file
-        if ($video['original_file'] && file_exists($video['original_file'])) {
-            unlink($video['original_file']);
+        $orig = $video['original_file'] ?? '';
+        if ($orig !== '' && !str_starts_with($orig, 'http://') && !str_starts_with($orig, 'https://') && file_exists($orig)) {
+            unlink($orig);
         }
 
         // Delete HLS segments directory

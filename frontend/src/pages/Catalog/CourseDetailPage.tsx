@@ -244,7 +244,7 @@ export function CourseDetailPage() {
                     <fieldset className={styles.planFieldset}>
                       <legend className={styles.planLegend}>Plan Options &amp; Accessibility</legend>
                       <p className={styles.planIntro}>
-                        Choose a duration and whether you want diet guidance included. The same options apply to every course.
+                        One-year access. Choose whether you want diet guidance included. The same options apply to every course.
                       </p>
                       {groupedPricingPlans().map((group) => (
                         <div key={group.title} className={styles.planGroup}>

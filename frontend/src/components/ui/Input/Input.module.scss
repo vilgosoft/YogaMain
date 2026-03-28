@@ -49,6 +49,37 @@
   &--icon {
     padding-left: $space-10;
   }
+
+  &--toggle {
+    padding-right: $space-10;
+  }
+}
+
+.toggleVisibility {
+  @include button-reset;
+  position: absolute;
+  right: $space-2;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $space-2;
+  color: $color-text-muted;
+  font-size: $font-size-lg;
+  border-radius: $radius-sm;
+  cursor: pointer;
+  transition: color $transition-fast, background $transition-fast;
+
+  &:hover {
+    color: $color-text;
+    background: rgba($color-primary, 0.08);
+  }
+
+  &:focus-visible {
+    outline: 2px solid $color-primary;
+    outline-offset: 2px;
+  }
 }
 
 .error {

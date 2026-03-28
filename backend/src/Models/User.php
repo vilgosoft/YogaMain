@@ -58,6 +58,12 @@ class User
         return (int) $this->db->lastInsertId();
     }
 
+    public function updatePasswordHash(int $id, string $passwordHash): void
+    {
+        $stmt = $this->db->prepare('UPDATE users SET password_hash = :h WHERE id = :id');
+        $stmt->execute(['h' => $passwordHash, 'id' => $id]);
+    }
+
     public function getPaginated(int $page = 1, int $perPage = 12, string $search = ''): array
     {
         $offset = ($page - 1) * $perPage;

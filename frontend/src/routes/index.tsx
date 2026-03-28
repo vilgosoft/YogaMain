@@ -5,6 +5,8 @@ import { AdminRoute } from './AdminRoute';
 import { HomePage } from '@/pages/Home/HomePage';
 import { LoginPage } from '@/pages/Auth/LoginPage';
 import { RegisterPage } from '@/pages/Auth/RegisterPage';
+import { ForgotPasswordPage } from '@/pages/Auth/ForgotPasswordPage';
+import { ResetPasswordPage } from '@/pages/Auth/ResetPasswordPage';
 import { CatalogPage } from '@/pages/Catalog/CatalogPage';
 import { CourseDetailPage } from '@/pages/Catalog/CourseDetailPage';
 import { MyLearningPage } from '@/pages/MyLearning/MyLearningPage';
@@ -26,6 +28,8 @@ export function AppRoutes() {
       <Route path={ROUTES.HOME} element={<HomePage />} />
       <Route path={ROUTES.LOGIN} element={<LoginPage />} />
       <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
+      <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPasswordPage />} />
+      <Route path={ROUTES.RESET_PASSWORD} element={<ResetPasswordPage />} />
       <Route path={ROUTES.COURSES} element={<CatalogPage />} />
       <Route path={ROUTES.COURSE_DETAIL} element={<CourseDetailPage />} />
       <Route path={ROUTES.PAYMENT_CALLBACK} element={<PaymentCallbackPage />} />

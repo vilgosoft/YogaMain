@@ -89,7 +89,7 @@ export function CourseCard({ course, onClick }: CourseCardProps) {
               ) : (
                 <div className={styles.paidPlans}>
                   <span className={styles.current}>{fromPriceLabel}</span>
-                  <span className={styles.planNote}>3-month &amp; 1-year options</span>
+                  <span className={styles.planNote}>1-year plans</span>
                 </div>
               )}
             </div>

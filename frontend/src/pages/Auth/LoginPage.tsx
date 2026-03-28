@@ -80,10 +80,17 @@ export function LoginPage() {
             name="password"
             placeholder="Enter your password"
             icon={<HiOutlineLockClosed />}
+            passwordToggle
             value={form.password}
             onChange={(e) => setForm({ ...form, password: e.target.value })}
             error={errors.password}
           />
+
+          <div className={styles.forgotRow}>
+            <Link to={ROUTES.FORGOT_PASSWORD} className={styles.forgotLink}>
+              Forgot password?
+            </Link>
+          </div>
 
           <Button type="submit" variant="primary" fullWidth isLoading={loading}>
             Sign In

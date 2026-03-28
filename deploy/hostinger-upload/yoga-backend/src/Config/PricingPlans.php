@@ -11,23 +11,13 @@ namespace App\Config;
 final class PricingPlans
 {
     public const PLANS = [
-        '3m_no_diet' => [
-            'amount' => 3000.0,
-            'title'  => '3-Month Plan',
-            'option' => 'Without diet',
-        ],
-        '3m_diet' => [
-            'amount' => 3500.0,
-            'title'  => '3-Month Plan',
-            'option' => 'With diet',
-        ],
         '1y_no_diet' => [
-            'amount' => 5000.0,
+            'amount' => 3000.0,
             'title'  => '1-Year Plan',
             'option' => 'Without diet',
         ],
         '1y_diet' => [
-            'amount' => 5500.0,
+            'amount' => 4000.0,
             'title'  => '1-Year Plan',
             'option' => 'With diet',
         ],

@@ -19,8 +19,13 @@ export function VideosPage() {
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [videoFile, setVideoFile] = useState<File | null>(null);
-  const [form, setForm] = useState({ title: '', description: '', is_preview: '0' });
+  const [videoUrl, setVideoUrl] = useState('');
+  const [form, setForm] = useState({
+    title: '',
+    description: '',
+    is_preview: '0',
+    duration_sec: '',
+  });
 
   const fetchData = useCallback(async () => {
     if (!courseId) return;
@@ -37,8 +42,17 @@ export function VideosPage() {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const handleUpload = async () => {
-    if (!videoFile || !form.title) {
-      showToast('error', 'Title and video file are required');
+    const url = videoUrl.trim();
+    if (!form.title.trim()) {
+      showToast('error', 'Title is required');
+      return;
+    }
+    if (!url) {
+      showToast('error', 'Paste your Google Drive video link');
+      return;
+    }
+    if (!url.includes('drive.google.com')) {
+      showToast('error', 'Use a Google Drive share link (drive.google.com)');
       return;
     }
 
@@ -46,19 +60,22 @@ export function VideosPage() {
     try {
       const formData = new FormData();
       formData.append('course_id', courseId!);
-      formData.append('title', form.title);
+      formData.append('title', form.title.trim());
       formData.append('description', form.description);
       formData.append('is_preview', form.is_preview);
-      formData.append('video', videoFile);
+      formData.append('video_url', url);
+      if (form.duration_sec.trim() !== '') {
+        formData.append('duration_sec', form.duration_sec.trim());
+      }
 
       await uploadVideo(formData);
-      showToast('success', 'Video uploaded');
+      showToast('success', 'Video added');
       setModalOpen(false);
-      setForm({ title: '', description: '', is_preview: '0' });
-      setVideoFile(null);
+      setForm({ title: '', description: '', is_preview: '0', duration_sec: '' });
+      setVideoUrl('');
       fetchData();
     } catch {
-      showToast('error', 'Upload failed');
+      showToast('error', 'Could not save video. Check the Drive link and try again.');
     } finally {
       setSaving(false);
     }
@@ -132,21 +149,36 @@ export function VideosPage() {
 
       <DataTable columns={columns} data={videos} loading={loading} keyExtractor={(r) => r.id} emptyMessage="No videos yet. Upload your first video." />
 
-      <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title="Upload Video">
+      <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title="Add video (Google Drive)">
         <div className={styles.form}>
           <Input label="Title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required />
           <Input label="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Optional" />
-          <div>
-            <label style={{ display: 'block', fontSize: '0.875rem', color: 'var(--color-text-muted)', marginBottom: '0.5rem' }}>Video File</label>
-            <input type="file" accept="video/*" onChange={(e) => setVideoFile(e.target.files?.[0] ?? null)} style={{ color: 'var(--color-text-muted)' }} />
-          </div>
+          <Input
+            label="Google Drive video link"
+            value={videoUrl}
+            onChange={(e) => setVideoUrl(e.target.value)}
+            placeholder="https://drive.google.com/file/d/.../view"
+            type="url"
+            autoComplete="off"
+          />
+          <p style={{ fontSize: '0.8125rem', color: 'var(--color-text-muted)', margin: '-0.25rem 0 0', lineHeight: 1.45 }}>
+            In Google Drive: right-click the video → Share → “Anyone with the link” can view → copy link.
+          </p>
+          <Input
+            label="Duration (seconds, optional)"
+            value={form.duration_sec}
+            onChange={(e) => setForm({ ...form, duration_sec: e.target.value })}
+            placeholder="e.g. 600 for progress estimate"
+            type="number"
+            min={0}
+          />
           <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.875rem' }}>
             <input type="checkbox" checked={form.is_preview === '1'} onChange={(e) => setForm({ ...form, is_preview: e.target.checked ? '1' : '0' })} />
             Free Preview
           </label>
           <div className={styles.formActions}>
             <Button variant="secondary" onClick={() => setModalOpen(false)}>Cancel</Button>
-            <Button onClick={handleUpload} isLoading={saving}>Upload</Button>
+            <Button onClick={handleUpload} isLoading={saving}>Add video</Button>
           </div>
         </div>
       </Modal>

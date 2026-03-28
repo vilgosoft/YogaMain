@@ -26,6 +26,7 @@ import styles from './PlayerPage.module.scss';
 interface VideoAccess {
   video_url: string;
   title: string;
+  player_kind?: 'html5' | 'drive_iframe';
 }
 
 export function PlayerPage() {
@@ -37,6 +38,7 @@ export function PlayerPage() {
   const [curriculum, setCurriculum] = useState<PlayerCurriculumResponse | null>(null);
   const [curriculumError, setCurriculumError] = useState('');
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [playerKind, setPlayerKind] = useState<'html5' | 'drive_iframe'>('html5');
   const [loadingVideo, setLoadingVideo] = useState(true);
   const [loadingCurriculum, setLoadingCurriculum] = useState(true);
   const [videoError, setVideoError] = useState('');
@@ -79,11 +81,13 @@ export function PlayerPage() {
     setLoadingVideo(true);
     setVideoError('');
     setVideoUrl(null);
+    setPlayerKind('html5');
 
     client
       .get<ApiResponse<VideoAccess>>(`/videos/${currentVideoId}`)
       .then((res) => {
         const data = res.data.data!;
+        setPlayerKind(data.player_kind === 'drive_iframe' ? 'drive_iframe' : 'html5');
         setVideoUrl(normalizeUrl(data.video_url));
       })
       .catch((err) => {
@@ -139,6 +143,38 @@ export function PlayerPage() {
     },
     [currentVideoId]
   );
+
+  const markDriveLessonComplete = useCallback(async () => {
+    if (!currentVideoId) return;
+    try {
+      const { course_progress_pct } = await postVideoProgress(currentVideoId, {
+        watched_sec: 0,
+        mark_complete: true,
+      });
+      setCurriculum((prev) => {
+        if (!prev) return prev;
+        const dur = prev.lessons.find((l) => l.id === currentVideoId)?.duration_sec ?? 0;
+        const lessons: PlayerLesson[] = prev.lessons.map((lesson) => {
+          if (lesson.id !== currentVideoId) return lesson;
+          return {
+            ...lesson,
+            watched_sec: dur > 0 ? dur : lesson.watched_sec,
+            is_completed: true,
+            lesson_progress_pct: 100,
+          };
+        });
+        const completedLessons = lessons.filter((l) => l.is_completed).length;
+        return {
+          ...prev,
+          lessons,
+          completed_lessons: completedLessons,
+          course_progress_pct,
+        };
+      });
+    } catch {
+      /* non-blocking */
+    }
+  }, [currentVideoId]);
 
   const scheduleDebouncedSave = useCallback(() => {
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
@@ -257,7 +293,7 @@ export function PlayerPage() {
                     <Spinner />
                   </div>
                 )}
-                {videoUrl && !videoError ? (
+                {videoUrl && !videoError && playerKind === 'html5' ? (
                   <video
                     ref={videoRef}
                     key={videoUrl}
@@ -282,6 +318,15 @@ export function PlayerPage() {
                   >
                     Your browser does not support the video tag.
                   </video>
+                ) : videoUrl && !videoError && playerKind === 'drive_iframe' ? (
+                  <iframe
+                    key={videoUrl}
+                    src={videoUrl}
+                    className={styles.driveIframe}
+                    title={currentLesson?.title ?? 'Lesson video'}
+                    allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+                    allowFullScreen
+                  />
                 ) : !loadingVideo ? (
                   <div className={styles.noVideo}>
                     <HiOutlineExclamationTriangle size={48} />
@@ -297,6 +342,7 @@ export function PlayerPage() {
                           .get<ApiResponse<VideoAccess>>(`/videos/${currentVideoId}`)
                           .then((res) => {
                             const data = res.data.data!;
+                            setPlayerKind(data.player_kind === 'drive_iframe' ? 'drive_iframe' : 'html5');
                             setVideoUrl(normalizeUrl(data.video_url));
                           })
                           .catch(() => setVideoError('Failed to load video'))
@@ -308,6 +354,17 @@ export function PlayerPage() {
                   </div>
                 ) : null}
               </div>
+              {videoUrl && !videoError && playerKind === 'drive_iframe' && !loadingVideo && (
+                <div className={styles.driveFooter}>
+                  <p className={styles.driveNote}>
+                    This lesson is hosted on Google Drive. When you have finished watching, mark it complete
+                    so your course progress updates.
+                  </p>
+                  <button type="button" className={styles.markCompleteBtn} onClick={() => void markDriveLessonComplete()}>
+                    Mark lesson complete
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className={styles.progressSummary}>

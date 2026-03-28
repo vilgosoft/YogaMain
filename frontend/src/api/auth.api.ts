@@ -24,3 +24,11 @@ export async function getMe(): Promise<User> {
   const res = await client.get<ApiResponse<User>>('/auth/me');
   return res.data.data!;
 }
+
+export async function forgotPassword(email: string): Promise<void> {
+  await client.post<ApiResponse<{ message: string }>>('/auth/forgot-password', { email });
+}
+
+export async function resetPassword(token: string, password: string): Promise<void> {
+  await client.post('/auth/reset-password', { token, password });
+}

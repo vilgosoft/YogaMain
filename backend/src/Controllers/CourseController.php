@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Helpers\Response;
 use App\Helpers\RequestAuth;
+use App\Helpers\GoogleDriveVideo;
 use App\Models\Course;
 use App\Models\Category;
 use App\Models\Video;
@@ -101,7 +102,7 @@ class CourseController
     }
 
     /**
-     * GET /videos/:id — returns video URL for enrolled users
+     * GET /videos/:id — returns play URL (HTML5 file or Google Drive preview iframe)
      */
     public function getVideo(array $params): void
     {
@@ -112,17 +113,12 @@ class CourseController
             Response::error('Video not found', 'NOT_FOUND', 404);
         }
 
-        // Preview videos are publicly accessible
         if ($video['is_preview']) {
-            Response::json([
-                'video_url' => $video['original_file'],
-                'title'     => $video['title'],
-            ]);
+            Response::json($this->videoAccessPayload($video));
             return;
         }
 
-        // Non-preview videos require enrollment
-        $authUser = $GLOBALS['auth_user'] ?? null;
+        $authUser = $this->viewerFromJwtOrGlobals();
         if (!$authUser) {
             Response::error('Authentication required', 'UNAUTHORIZED', 401);
         }
@@ -132,10 +128,66 @@ class CourseController
             Response::error('You must be enrolled in this course', 'FORBIDDEN', 403);
         }
 
-        Response::json([
-            'video_url' => $video['original_file'],
-            'title'     => $video['title'],
-        ]);
+        Response::json($this->videoAccessPayload($video));
+    }
+
+    /**
+     * @param array<string, mixed> $video
+     * @return array{video_url: string, title: string, player_kind: string}
+     */
+    private function videoAccessPayload(array $video): array
+    {
+        $stored = trim((string) ($video['original_file'] ?? ''));
+        if ($stored === '') {
+            Response::error('Video URL not configured', 'VIDEO_NOT_FOUND', 404);
+        }
+
+        if (GoogleDriveVideo::isDriveUrl($stored)) {
+            $preview = GoogleDriveVideo::toPreviewUrl($stored);
+            if (!$preview) {
+                Response::error(
+                    'Invalid Google Drive link. Use a share link like https://drive.google.com/file/d/FILE_ID/view',
+                    'INVALID_VIDEO_URL',
+                    422
+                );
+            }
+
+            return [
+                'video_url'    => $preview,
+                'title'        => $video['title'],
+                'player_kind'  => 'drive_iframe',
+            ];
+        }
+
+        return [
+            'video_url'    => $stored,
+            'title'        => $video['title'],
+            'player_kind'  => 'html5',
+        ];
+    }
+
+    private function viewerFromJwtOrGlobals(): ?array
+    {
+        if (!empty($GLOBALS['auth_user'])) {
+            return $GLOBALS['auth_user'];
+        }
+
+        $authHeader = RequestAuth::bearerHeader();
+        if (!preg_match('/^Bearer\s+(.+)$/i', $authHeader, $matches)) {
+            return null;
+        }
+
+        $jwt = new JwtService();
+        $decoded = $jwt->decode($matches[1]);
+        if (!$decoded) {
+            return null;
+        }
+
+        return [
+            'id'    => (int) $decoded->sub,
+            'email' => $decoded->email,
+            'role'  => $decoded->role,
+        ];
     }
 
     /**

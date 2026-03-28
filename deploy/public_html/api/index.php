@@ -234,6 +234,8 @@ $authController = new App\Controllers\AuthController();
 
 $router->post('/auth/register', [$authController, 'register']);
 $router->post('/auth/login',    [$authController, 'login']);
+$router->post('/auth/forgot-password', [$authController, 'forgotPassword']);
+$router->post('/auth/reset-password',  [$authController, 'resetPassword']);
 $router->post('/auth/refresh',  [$authController, 'refresh']);
 $router->post('/auth/logout',   [$authController, 'logout'], [AuthMiddleware::class]);
 $router->get('/auth/me',        [$authController, 'me'],     [AuthMiddleware::class]);
@@ -288,102 +290,7 @@ $router->get('/courses',          [$courseController, 'index']);
 $router->get('/categories',       [$courseController, 'categories']);
 $router->get('/courses/:slug',    [$courseController, 'show']);
 
-// Video access (enrolled users) — inline to avoid deploy sync issues
-$router->get('/videos/:id', function (array $params) {
-    $videoId = (int) $params['id'];
-    $videoModel = new App\Models\Video();
-    $video = $videoModel->findById($videoId);
-
-    if (!$video) {
-        App\Helpers\Response::error('Video not found', 'NOT_FOUND', 404);
-    }
-
-    // Build a proper absolute URL for the video file
-    $storedPath = $video['original_file'] ?? '';
-    $videoUrl = '';
-
-    // Determine the site origin (e.g. https://tpslchecklist.in)
-    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
-        || ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https'
-        ? 'https' : 'http';
-    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-    $origin = $scheme . '://' . $host;
-
-    if (str_starts_with($storedPath, 'http://') || str_starts_with($storedPath, 'https://')) {
-        // Already a full URL
-        $videoUrl = $storedPath;
-    } elseif (str_starts_with($storedPath, '/uploads/')) {
-        // New format: /uploads/videos/vid_xxx.mp4 → full URL
-        $videoUrl = $origin . $storedPath;
-    } elseif (str_starts_with($storedPath, '/api/storage/')) {
-        // Old fallback format — try to find file in public_html/uploads instead
-        $filename = basename($storedPath);
-        $videoUrl = $origin . '/uploads/videos/' . $filename;
-    } elseif (str_starts_with($storedPath, './storage/')) {
-        // Old local dev format — try to find in public_html/uploads
-        $filename = basename($storedPath);
-        $videoUrl = $origin . '/uploads/videos/' . $filename;
-    } elseif ($storedPath) {
-        // Unknown format — try as-is with origin
-        $videoUrl = $origin . '/' . ltrim($storedPath, '/');
-    }
-
-    if (!$videoUrl) {
-        App\Helpers\Response::error('Video file path not configured', 'VIDEO_NOT_FOUND', 404);
-    }
-
-    // Verify the file actually exists on disk (for local paths)
-    $docRoot = $_SERVER['DOCUMENT_ROOT'] ?? '';
-    if ($docRoot && str_starts_with($storedPath, '/uploads/')) {
-        $diskPath = $docRoot . $storedPath;
-        if (!file_exists($diskPath)) {
-            App\Helpers\Response::error(
-                'Video file not found on server. Path: ' . $storedPath,
-                'FILE_NOT_FOUND',
-                404
-            );
-        }
-    }
-
-    // Preview videos are publicly accessible
-    if ($video['is_preview']) {
-        App\Helpers\Response::json([
-            'video_url' => $videoUrl,
-            'title'     => $video['title'],
-        ]);
-        return;
-    }
-
-    // Non-preview videos require authentication + enrollment
-    $authUser = $GLOBALS['auth_user'] ?? null;
-    if (!$authUser) {
-        // Try to parse JWT from Authorization header
-        $authHeader = $_SERVER['HTTP_AUTHORIZATION']
-            ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION']
-            ?? '';
-        if (preg_match('/^Bearer\s+(.+)$/i', $authHeader, $matches)) {
-            $jwt = new App\Services\JwtService();
-            $decoded = $jwt->decode($matches[1]);
-            if ($decoded) {
-                $authUser = ['id' => $decoded->sub, 'email' => $decoded->email, 'role' => $decoded->role];
-            }
-        }
-    }
-
-    if (!$authUser) {
-        App\Helpers\Response::error('Authentication required', 'UNAUTHORIZED', 401);
-    }
-
-    $enrollmentModel = new App\Models\Enrollment();
-    if (!$enrollmentModel->isEnrolled($authUser['id'], $video['course_id'])) {
-        App\Helpers\Response::error('You must be enrolled in this course', 'FORBIDDEN', 403);
-    }
-
-    App\Helpers\Response::json([
-        'video_url' => $videoUrl,
-        'title'     => $video['title'],
-    ]);
-});
+$router->get('/videos/:id', [$courseController, 'getVideo']);
 
 $router->post('/videos/:id/progress', [$courseController, 'saveVideoProgress'], [AuthMiddleware::class]);
 $router->get('/player/course/:courseId', [$courseController, 'playerCurriculum'], [AuthMiddleware::class]);

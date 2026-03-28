@@ -55,7 +55,7 @@ export function CoursesPage() {
     {
       key: 'price',
       header: 'Price',
-      render: (r) => (r.is_free ? 'Free' : 'Plans ₹3k–₹5.5k'),
+      render: (r) => (r.is_free ? 'Free' : '1y ₹3k / ₹4k'),
     },
     { key: 'video_count', header: 'Videos', render: (r) => String(r.video_count ?? 0) },
     {
