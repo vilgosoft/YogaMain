@@ -97,11 +97,14 @@ class AdminVideoController
 
         $sortOrder = $this->model->getNextSortOrder((int) $data['course_id']);
 
+        $captionsUrl = $this->normalizeCaptionsUrlForSave($data['captions_url'] ?? null);
+
         $id = $this->model->create([
             'course_id'        => (int) $data['course_id'],
             'title'            => htmlspecialchars($data['title'], ENT_QUOTES, 'UTF-8'),
             'description'      => $data['description'] ?? null,
             'original_file'    => $storedPath,
+            'captions_url'     => $captionsUrl,
             'duration_sec'     => !empty($data['duration_sec']) ? (int) $data['duration_sec'] : null,
             'sort_order'       => (int) ($data['sort_order'] ?? $sortOrder),
             'is_preview'       => (int) ($data['is_preview'] ?? 0),
@@ -136,6 +139,14 @@ class AdminVideoController
         if (isset($data['is_preview'])) {
             $updateData['is_preview'] = (int) $data['is_preview'];
         }
+        if (array_key_exists('duration_sec', $data)) {
+            $v = $data['duration_sec'];
+            if ($v === null || $v === '') {
+                $updateData['duration_sec'] = null;
+            } else {
+                $updateData['duration_sec'] = (int) $data['duration_sec'];
+            }
+        }
         if (isset($data['video_url'])) {
             $url = trim((string) $data['video_url']);
             if ($url === '') {
@@ -153,6 +164,20 @@ class AdminVideoController
             }
             $updateData['original_file'] = $url;
             $updateData['transcode_status'] = 'ready';
+        }
+        if (array_key_exists('captions_url', $data)) {
+            $c = trim((string) $data['captions_url']);
+            if ($c === '') {
+                $updateData['captions_url'] = null;
+            } elseif (str_starts_with($c, '/') || filter_var($c, FILTER_VALIDATE_URL)) {
+                $updateData['captions_url'] = $c;
+            } else {
+                Response::error(
+                    'Invalid captions URL. Use https://… to a WebVTT file or a path like /uploads/captions/en.vtt',
+                    'VALIDATION_ERROR',
+                    422
+                );
+            }
         }
 
         $this->model->update($id, $updateData);
@@ -196,5 +221,24 @@ class AdminVideoController
 
         $this->model->delete($id);
         Response::json(null, 'Video deleted');
+    }
+
+    /**
+     * @param mixed $raw From POST/JSON; empty → null
+     */
+    private function normalizeCaptionsUrlForSave(mixed $raw): ?string
+    {
+        $c = trim((string) $raw);
+        if ($c === '') {
+            return null;
+        }
+        if (str_starts_with($c, '/') || filter_var($c, FILTER_VALIDATE_URL)) {
+            return $c;
+        }
+        Response::error(
+            'Invalid captions URL. Use https://… to a WebVTT (.vtt) file or a path like /uploads/captions/en.vtt',
+            'VALIDATION_ERROR',
+            422
+        );
     }
 }

@@ -33,6 +33,16 @@ class User
         return $user ?: null;
     }
 
+    public function firstActiveAdminEmail(): ?string
+    {
+        $stmt = $this->db->query(
+            "SELECT email FROM users WHERE role = 'admin' AND is_active = 1 ORDER BY id ASC LIMIT 1"
+        );
+        $row = $stmt->fetch();
+
+        return $row ? (string) $row['email'] : null;
+    }
+
     public function findByPhone(string $phone): ?array
     {
         $stmt = $this->db->prepare('SELECT * FROM users WHERE phone = :phone LIMIT 1');

@@ -1,6 +1,21 @@
 .wrapper {
   @include container;
   flex: 1;
-  padding-top: $space-8;
-  padding-bottom: $space-8;
+  min-width: 0;
+  padding-top: clamp($space-5, 4vw, $space-8);
+  padding-bottom: clamp($space-5, 4vw, $space-8);
+}
+
+.wrapperFluid {
+  max-width: none;
+  width: 100%;
+  padding-left: 0;
+  padding-right: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  min-height: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }

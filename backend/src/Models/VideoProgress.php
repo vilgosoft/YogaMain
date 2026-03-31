@@ -31,18 +31,12 @@ class VideoProgress
     }
 
     /**
-     * Mark watch position; auto-complete at >= 90% of duration when duration_sec known.
+     * Mark watch position. Completion is explicit (mark_complete) only — no auto-complete from % watched.
      */
     public function upsert(int $userId, int $videoId, int $watchedSec, bool $forceComplete, ?int $durationSec): void
     {
         $watchedSec = max(0, $watchedSec);
         $completed  = $forceComplete;
-
-        if (!$completed && $durationSec !== null && $durationSec > 0) {
-            if ($watchedSec >= (int) floor($durationSec * 0.9)) {
-                $completed = true;
-            }
-        }
 
         $stmt = $this->db->prepare(
             'INSERT INTO video_progress (user_id, video_id, watched_sec, is_completed)

@@ -29,10 +29,11 @@
 
 .active {
   background: $gradient-primary;
-  color: $color-text;
+  color: #fff;
   border-color: transparent;
 
   &:hover {
     border-color: transparent;
+    color: #fff;
   }
 }

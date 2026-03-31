@@ -22,6 +22,8 @@ export interface Course {
   duration_hours: number | null;
   is_published: boolean;
   is_free: boolean;
+  /** Shown on home “Upcoming” section when true (admin flag). */
+  is_upcoming?: boolean | number;
   video_count?: number;
   /** Present on catalog/featured when logged in; true if user is enrolled */
   is_enrolled?: boolean;
@@ -37,7 +39,11 @@ export interface Video {
   duration_sec: number | null;
   sort_order: number;
   is_preview: boolean;
-  transcode_status: 'pending' | 'processing' | 'complete' | 'failed';
+  transcode_status: 'pending' | 'processing' | 'complete' | 'failed' | 'ready';
+  /** Present from API (Drive URL or file path); admin edit uses this for Drive link */
+  original_file?: string | null;
+  /** WebVTT URL or site path (e.g. /uploads/captions/en.vtt) for HTML5 captions */
+  captions_url?: string | null;
 }
 
 export interface Enrollment {

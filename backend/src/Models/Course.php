@@ -99,8 +99,8 @@ class Course
     public function create(array $data): int
     {
         $stmt = $this->db->prepare(
-            'INSERT INTO courses (category_id, title, slug, description, short_desc, thumbnail_url, price, discount_price, difficulty, duration_hours, is_published, is_free, sort_order)
-             VALUES (:category_id, :title, :slug, :description, :short_desc, :thumbnail_url, :price, :discount_price, :difficulty, :duration_hours, :is_published, :is_free, :sort_order)'
+            'INSERT INTO courses (category_id, title, slug, description, short_desc, thumbnail_url, price, discount_price, difficulty, duration_hours, is_published, is_free, is_upcoming, sort_order)
+             VALUES (:category_id, :title, :slug, :description, :short_desc, :thumbnail_url, :price, :discount_price, :difficulty, :duration_hours, :is_published, :is_free, :is_upcoming, :sort_order)'
         );
         $stmt->execute([
             'category_id'    => $data['category_id'],
@@ -115,6 +115,7 @@ class Course
             'duration_hours' => $data['duration_hours'] ?? null,
             'is_published'   => $data['is_published'] ?? 0,
             'is_free'        => $data['is_free'] ?? 0,
+            'is_upcoming'    => $data['is_upcoming'] ?? 0,
             'sort_order'     => $data['sort_order'] ?? 0,
         ]);
         return (int) $this->db->lastInsertId();
@@ -122,7 +123,7 @@ class Course
 
     public function update(int $id, array $data): void
     {
-        $allowed = ['category_id', 'title', 'slug', 'description', 'short_desc', 'thumbnail_url', 'price', 'discount_price', 'difficulty', 'duration_hours', 'is_published', 'is_free', 'sort_order'];
+        $allowed = ['category_id', 'title', 'slug', 'description', 'short_desc', 'thumbnail_url', 'price', 'discount_price', 'difficulty', 'duration_hours', 'is_published', 'is_free', 'is_upcoming', 'sort_order'];
         $fields = [];
         $params = ['id' => $id];
 
@@ -165,6 +166,25 @@ class Course
         $stats['total_videos'] = (int) $stmt->fetchColumn();
 
         return $stats;
+    }
+
+    /**
+     * Courses flagged for the home “Upcoming” section (no auth).
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function getUpcomingPublic(): array
+    {
+        $stmt = $this->db->query(
+            'SELECT c.*, cat.name as category_name,
+                    (SELECT COUNT(*) FROM videos v WHERE v.course_id = c.id) as video_count
+             FROM courses c
+             LEFT JOIN categories cat ON c.category_id = cat.id
+             WHERE c.is_upcoming = 1
+             ORDER BY c.sort_order ASC, c.created_at DESC'
+        );
+
+        return $stmt->fetchAll();
     }
 
     /** Public counts for marketing / home page (no auth). */

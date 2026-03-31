@@ -1,0 +1,85 @@
+.card {
+  @include card;
+  @include flex-col;
+  overflow: hidden;
+  border-radius: $radius-xl;
+  box-shadow: $shadow-card;
+
+  &:hover {
+    box-shadow: $shadow-md;
+  }
+}
+
+.imageWrap {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: $color-bg-alt;
+}
+
+.image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.placeholder {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, $color-surface-light, $color-bg-alt);
+}
+
+.badge {
+  position: absolute;
+  top: $space-3;
+  right: $space-3;
+  display: inline-flex;
+  align-items: center;
+  gap: $space-1;
+  padding: $space-1 $space-3;
+  border-radius: $radius-full;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: #fff;
+  background: linear-gradient(135deg, $color-primary-dark, $color-secondary);
+  box-shadow: $shadow-sm;
+}
+
+.category {
+  position: absolute;
+  top: $space-3;
+  left: $space-3;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(6px);
+  color: #fff;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  padding: $space-1 $space-2;
+  border-radius: $radius-sm;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.body {
+  @include flex-col;
+  gap: $space-3;
+  padding: $space-5;
+  flex: 1;
+}
+
+.title {
+  margin: 0;
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text;
+  line-height: $line-height-tight;
+}
+
+.desc {
+  margin: 0;
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+  line-height: $line-height-relaxed;
+  flex: 1;
+  @include truncate(3);
+}

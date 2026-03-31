@@ -34,14 +34,15 @@ class Video
     public function create(array $data): int
     {
         $stmt = $this->db->prepare(
-            'INSERT INTO videos (course_id, title, description, original_file, duration_sec, sort_order, is_preview, transcode_status)
-             VALUES (:course_id, :title, :description, :original_file, :duration_sec, :sort_order, :is_preview, :transcode_status)'
+            'INSERT INTO videos (course_id, title, description, original_file, captions_url, duration_sec, sort_order, is_preview, transcode_status)
+             VALUES (:course_id, :title, :description, :original_file, :captions_url, :duration_sec, :sort_order, :is_preview, :transcode_status)'
         );
         $stmt->execute([
             'course_id'        => $data['course_id'],
             'title'            => $data['title'],
             'description'      => $data['description'] ?? null,
             'original_file'    => $data['original_file'],
+            'captions_url'     => $data['captions_url'] ?? null,
             'duration_sec'     => $data['duration_sec'] ?? null,
             'sort_order'       => $data['sort_order'] ?? 0,
             'is_preview'       => $data['is_preview'] ?? 0,
@@ -52,7 +53,7 @@ class Video
 
     public function update(int $id, array $data): void
     {
-        $allowed = ['title', 'description', 'sort_order', 'is_preview', 'hls_path', 'duration_sec', 'transcode_status', 'original_file'];
+        $allowed = ['title', 'description', 'sort_order', 'is_preview', 'hls_path', 'duration_sec', 'transcode_status', 'original_file', 'captions_url'];
         $fields = [];
         $params = ['id' => $id];
 

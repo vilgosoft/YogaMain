@@ -69,6 +69,7 @@ class AdminCourseController
             'duration_hours' => !empty($data['duration_hours']) ? (float) $data['duration_hours'] : null,
             'is_published'   => (int) ($data['is_published'] ?? 0),
             'is_free'        => (int) ($data['is_free'] ?? 0),
+            'is_upcoming'    => (int) ($data['is_upcoming'] ?? 0),
             'sort_order'     => (int) ($data['sort_order'] ?? 0),
         ]);
 
@@ -98,12 +99,12 @@ class AdminCourseController
         }
 
         $updateData = [];
-        $allowed = ['category_id', 'title', 'slug', 'description', 'short_desc', 'thumbnail_url', 'price', 'discount_price', 'difficulty', 'duration_hours', 'is_published', 'is_free', 'sort_order'];
+        $allowed = ['category_id', 'title', 'slug', 'description', 'short_desc', 'thumbnail_url', 'price', 'discount_price', 'difficulty', 'duration_hours', 'is_published', 'is_free', 'is_upcoming', 'sort_order'];
 
         foreach ($allowed as $field) {
             if (array_key_exists($field, $data)) {
                 $val = $data[$field];
-                if (in_array($field, ['category_id', 'is_published', 'is_free', 'sort_order'])) {
+                if (in_array($field, ['category_id', 'is_published', 'is_free', 'is_upcoming', 'sort_order'])) {
                     $val = (int) $val;
                 } elseif (in_array($field, ['price', 'discount_price', 'duration_hours'])) {
                     $val = $val !== '' ? (float) $val : null;

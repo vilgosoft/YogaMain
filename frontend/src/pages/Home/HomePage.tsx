@@ -4,7 +4,13 @@ import { HiOutlineAcademicCap, HiOutlineUsers, HiOutlinePlayCircle, HiOutlineClo
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/Button/Button';
 import { CourseGrid } from '@/components/course/CourseGrid/CourseGrid';
-import { getFeaturedCourses, getLandingStats, type LandingStats } from '@/api/courses.api';
+import { UpcomingCourseCard } from '@/components/course/UpcomingCourseCard/UpcomingCourseCard';
+import {
+  getFeaturedCourses,
+  getLandingStats,
+  getUpcomingCourses,
+  type LandingStats,
+} from '@/api/courses.api';
 import type { Course } from '@/types/course.types';
 import { ROUTES } from '@/utils/constants';
 import styles from './HomePage.module.scss';
@@ -52,6 +58,8 @@ export function HomePage() {
   const { isAuthenticated, user } = useAuth();
   const [featuredCourses, setFeaturedCourses] = useState<Course[]>([]);
   const [featuredLoading, setFeaturedLoading] = useState(true);
+  const [upcomingCourses, setUpcomingCourses] = useState<Course[]>([]);
+  const [upcomingLoading, setUpcomingLoading] = useState(true);
   const [landingStats, setLandingStats] = useState<LandingStats | null>(null);
 
   useEffect(() => {
@@ -59,6 +67,13 @@ export function HomePage() {
       .then(setFeaturedCourses)
       .catch(() => {})
       .finally(() => setFeaturedLoading(false));
+  }, [isAuthenticated, user?.id]);
+
+  useEffect(() => {
+    getUpcomingCourses()
+      .then(setUpcomingCourses)
+      .catch(() => {})
+      .finally(() => setUpcomingLoading(false));
   }, [isAuthenticated, user?.id]);
 
   useEffect(() => {
@@ -131,6 +146,27 @@ export function HomePage() {
         </div>
       </section>
 
+      {/* Upcoming courses */}
+      {(upcomingLoading || upcomingCourses.length > 0) && (
+        <section className={styles.upcoming} aria-labelledby="upcoming-heading">
+          <div className={styles.upcomingHeader}>
+            <h2 id="upcoming-heading">
+              Upcoming <span className={styles.heroGradient}>Courses</span>
+            </h2>
+            <p>Be the first to know when these programs go live. Tap I&apos;m interested and we&apos;ll notify our team.</p>
+          </div>
+          {upcomingLoading ? (
+            <p className={styles.upcomingLoading}>Loading…</p>
+          ) : (
+            <div className={styles.upcomingGrid}>
+              {upcomingCourses.map((c) => (
+                <UpcomingCourseCard key={c.id} course={c} />
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+
       {/* Featured Courses */}
       <section className={styles.featured}>
         <div className={styles.featuredHeader}>
@@ -140,9 +176,10 @@ export function HomePage() {
           <p>Start with our most popular yoga courses.</p>
         </div>
         <CourseGrid
-          courses={featuredCourses}
+          courses={featuredCourses.slice(0, 3)}
           loading={featuredLoading}
           emptyMessage="Courses coming soon!"
+          variant="featured"
           onCourseClick={(course) => navigate(`/courses/${course.slug}`)}
         />
         {featuredCourses.length > 0 && (

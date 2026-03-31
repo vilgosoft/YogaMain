@@ -22,11 +22,35 @@
 }
 
 .hero {
+  position: relative;
   border-radius: $radius-lg;
   overflow: hidden;
   aspect-ratio: 16 / 9;
   background: $color-bg-alt;
   margin-bottom: $space-6;
+}
+
+.heroEnrolledBadge {
+  position: absolute;
+  top: $space-4;
+  right: $space-4;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+  padding: $space-2 $space-4;
+  background: rgba(15, 23, 42, 0.9);
+  color: #fff;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: $shadow-md;
+
+  svg {
+    flex-shrink: 0;
+    opacity: 0.95;
+  }
 }
 
 .heroImg {
@@ -61,7 +85,7 @@
 }
 
 .title {
-  font-family: $font-heading;
+  font-family: $font-primary;
   font-size: $font-size-2xl;
   font-weight: $font-weight-bold;
   color: $color-text;
@@ -226,11 +250,17 @@
   align-items: center;
   gap: $space-2;
   padding: $space-3 $space-4;
-  background: rgba($color-accent, 0.12);
-  color: $color-accent;
+  background: rgba(15, 23, 42, 0.92);
+  color: #fff;
   border-radius: $radius-md;
   font-weight: $font-weight-semibold;
   font-size: $font-size-sm;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+
+  svg {
+    color: #86efac;
+    flex-shrink: 0;
+  }
 }
 
 .planFieldset {

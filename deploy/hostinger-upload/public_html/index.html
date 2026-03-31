@@ -3,7 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Single CSP after .htaccess clears host defaults. frame-src must include Drive + accounts (cookie refresh inside embed). -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https: blob:; media-src 'self' https: blob:; connect-src 'self' https: wss:; frame-src 'self' https://drive.google.com https://drive.usercontent.google.com https://*.google.com https://*.googleusercontent.com https://docs.google.com https://accounts.google.com; worker-src 'self' blob:; base-uri 'self'; form-action 'self';"
+    />
     <title>SAI ISHANI YOGASHALA — Yoga & Meditation</title>
     <meta name="description" content="SAI ISHANI YOGASHALA — Transform your practice with expert-led yoga courses, structured learning paths, and secure video streaming." />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -14,14 +20,14 @@
         try {
           var k = 'yogalms-theme';
           var v = localStorage.getItem(k);
-          document.documentElement.setAttribute('data-theme', v === 'light' ? 'light' : 'dark');
+          document.documentElement.setAttribute('data-theme', v === 'dark' ? 'dark' : 'light');
         } catch (e) {
-          document.documentElement.setAttribute('data-theme', 'dark');
+          document.documentElement.setAttribute('data-theme', 'light');
         }
       })();
     </script>
-    <script type="module" crossorigin src="/assets/index-HdyEgA6a.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-CnmKF174.css">
+    <script type="module" crossorigin src="/assets/index-DAcdzEkW.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-BLvHu6HI.css">
   </head>
   <body>
     <div id="root"></div>

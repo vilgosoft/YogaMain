@@ -10,13 +10,18 @@
   flex-direction: column;
 }
 
+/* Space for fixed mobile tab bar (see MobileBottomNav) */
+html[data-bottom-nav='true'] #root {
+  padding-bottom: calc(4.25rem + env(safe-area-inset-bottom, 0px));
+}
+
 .container {
   @include container;
 }
 
 .page {
   flex: 1;
-  padding: $space-8 0;
+  padding: clamp($space-5, 4vw, $space-8) 0;
 }
 
 // Status badges

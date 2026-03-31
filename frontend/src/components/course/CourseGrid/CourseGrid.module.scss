@@ -2,6 +2,20 @@
   @include grid(280px, $space-6);
 }
 
+.gridFeatured {
+  display: grid;
+  gap: $space-6;
+  grid-template-columns: 1fr;
+
+  @include respond(sm) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @include respond(lg) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 .loading {
   @include flex-center;
   padding: $space-16 0;

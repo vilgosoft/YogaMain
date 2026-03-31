@@ -1,0 +1,204 @@
+$nav-h: 3.5rem;
+
+.bar {
+  display: none;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 210;
+  min-height: calc(#{$nav-h} + env(safe-area-inset-bottom, 0px));
+  padding: $space-2 $space-2 calc(#{$space-2} + env(safe-area-inset-bottom, 0px));
+  background: color-mix(in srgb, var(--navbar-bg) 92%, transparent);
+  backdrop-filter: blur(16px);
+  border-top: 1px solid color-mix(in srgb, var(--color-border) 90%, transparent);
+  box-shadow: 0 -4px 24px color-mix(in srgb, var(--color-text) 6%, transparent);
+
+  @media (max-width: $bp-md) {
+    display: flex;
+    align-items: stretch;
+    justify-content: space-around;
+    gap: $space-1;
+  }
+}
+
+.tab {
+  @include button-reset;
+  flex: 1;
+  max-width: 5.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  font-size: 10px;
+  font-weight: $font-weight-semibold;
+  color: $color-text-muted;
+  border-radius: $radius-md;
+  min-height: 44px;
+  transition: color $transition-fast, background $transition-fast;
+
+  span:last-child {
+    line-height: 1.1;
+    text-align: center;
+  }
+
+  &:active {
+    background: $color-surface-hover;
+  }
+}
+
+.tabActive {
+  color: $color-primary-light;
+
+  .icon {
+    color: $color-primary-light;
+  }
+}
+
+.icon {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  color: inherit;
+}
+
+.sheetBackdrop {
+  @include button-reset;
+  position: fixed;
+  inset: 0;
+  z-index: 299;
+  background: rgba(0, 0, 0, 0.45);
+  animation: fadeIn 0.2s ease;
+
+  @media (min-width: ($bp-md + 1px)) {
+    display: none;
+  }
+}
+
+.sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: $z-modal;
+  max-height: 70dvh;
+  background: $color-surface;
+  border-radius: $radius-xl $radius-xl 0 0;
+  border: 1px solid $color-border;
+  border-bottom: none;
+  padding-bottom: calc(#{$space-4} + env(safe-area-inset-bottom, 0px));
+  box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.18);
+  animation: slideUp 0.22s ease;
+
+  @media (min-width: ($bp-md + 1px)) {
+    display: none;
+  }
+}
+
+.sheetHandle {
+  width: 36px;
+  height: 4px;
+  margin: $space-3 auto $space-2;
+  border-radius: $radius-full;
+  background: $color-border;
+}
+
+.sheetBody {
+  padding: 0 $space-4 $space-2;
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+}
+
+.sheetTheme {
+  border: 1px solid $color-border;
+  background: $color-bg-alt;
+}
+
+.sheetBtn {
+  @include button-reset;
+  width: 100%;
+  text-align: left;
+  padding: $space-3 $space-4;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text;
+  border-radius: $radius-md;
+  border: 1px solid $color-border;
+  background: $color-bg-alt;
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+  min-height: 48px;
+
+  &:active {
+    opacity: 0.9;
+  }
+}
+
+.sheetBtnPrimary {
+  @include button-reset;
+  width: 100%;
+  text-align: left;
+  padding: $space-3 $space-4;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: #fff;
+  border-radius: $radius-md;
+  border: 1px solid $color-primary;
+  background: $color-primary;
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+  min-height: 48px;
+
+  &:active {
+    opacity: 0.92;
+  }
+}
+
+.sheetBtnDanger {
+  @include button-reset;
+  width: 100%;
+  text-align: left;
+  padding: $space-3 $space-4;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-error;
+  border-radius: $radius-md;
+  border: 1px solid color-mix(in srgb, $color-error 35%, $color-border);
+  background: $color-bg-alt;
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+  min-height: 48px;
+
+  &:active {
+    opacity: 0.9;
+  }
+}
+
+.sheetBtnIcon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}

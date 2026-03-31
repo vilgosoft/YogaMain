@@ -1,7 +1,39 @@
 .page {
-  min-height: calc(100vh - 72px);
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  max-width: min(100%, 88rem);
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: clamp(0.75rem, 2.5vw, 1.75rem);
+  padding-right: clamp(0.75rem, 2.5vw, 1.75rem);
+  box-sizing: border-box;
   background: $color-bg;
-  padding-bottom: $space-10;
+  padding-bottom: $space-2;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  @include respond(lg) {
+    max-width: min(100%, 92rem);
+  }
+
+  @include respond(xl) {
+    max-width: min(100%, 100rem);
+  }
+}
+
+.playerRoot {
+  position: relative;
+}
+
+@media (max-width: ($bp-lg - 1px)) {
+  .playerRoot {
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    min-height: 0;
+  }
 }
 
 .loading {
@@ -43,13 +75,16 @@
 }
 
 .topBar {
-  @include container;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: $space-4;
-  padding-top: $space-4;
-  padding-bottom: $space-3;
+  gap: $space-3;
+  padding-top: $space-2;
+  padding-bottom: $space-2;
   flex-wrap: wrap;
 }
 
@@ -61,9 +96,24 @@
   font-size: $font-size-sm;
   font-weight: $font-weight-medium;
   text-decoration: none;
+  min-height: 44px;
 
   &:hover {
     text-decoration: underline;
+  }
+}
+
+.backOverviewFull {
+  @media (max-width: $bp-sm) {
+    display: none;
+  }
+}
+
+.backOverviewShort {
+  display: none;
+
+  @media (max-width: $bp-sm) {
+    display: inline;
   }
 }
 
@@ -75,10 +125,11 @@
   border: 1px solid $color-border;
   color: $color-text-secondary;
   font-size: $font-size-sm;
-  padding: $space-2 $space-3;
+  padding: $space-2 $space-4;
   border-radius: $radius-md;
   cursor: pointer;
   transition: border-color $transition-fast, color $transition-fast;
+  min-height: 44px;
 
   &:hover {
     border-color: $color-border-light;
@@ -86,16 +137,91 @@
   }
 }
 
+.sidebarBackdrop {
+  display: none;
+}
+
+@media (max-width: ($bp-lg - 1px)) {
+  .sidebarBackdrop {
+    @include button-reset;
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 180;
+    background: rgba(0, 0, 0, 0.5);
+    cursor: pointer;
+    animation: fadeBackdrop 0.2s ease;
+  }
+
+  .sidebar.sidebarOpen {
+    position: fixed;
+    top: 7.25rem;
+    right: 0;
+    bottom: 0;
+    left: auto;
+    width: min(100vw - $space-3, 22rem);
+    max-width: 100%;
+    z-index: 190;
+    margin: 0;
+    padding: $space-4 $space-3 $space-3;
+    background: $color-bg;
+    border-left: 1px solid $color-border;
+    box-shadow: -12px 0 40px rgba(0, 0, 0, 0.18);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    animation: slideSidebar 0.22s ease;
+  }
+
+  .lessonList {
+    max-height: none;
+    flex: 1;
+    min-height: 0;
+  }
+}
+
+@keyframes fadeBackdrop {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideSidebar {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
 .layout {
-  @include container;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  flex: 1;
+  min-height: 0;
   display: grid;
   grid-template-columns: 1fr;
-  gap: $space-6;
-  align-items: start;
+  gap: clamp($space-3, 2.5vw, $space-6);
+  align-items: stretch;
+  overflow: hidden;
 
   @include respond(lg) {
-    grid-template-columns: minmax(0, 1fr) 320px;
-    gap: $space-8;
+    grid-template-columns: minmax(0, 1fr) minmax(min(100%, 260px), min(400px, 32vw));
+  }
+
+  @include respond(xl) {
+    grid-template-columns: minmax(0, 1fr) minmax(300px, min(420px, 30vw));
+  }
+}
+
+@media (max-width: ($bp-lg - 1px)) {
+  .layout {
+    overflow: visible;
   }
 }
 
@@ -107,21 +233,163 @@
 
 .main {
   min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+  overflow: hidden;
 }
 
 .videoShell {
   width: 100%;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  gap: $space-2;
 }
 
+/* Full width of the main column; 16:9 height from width; shrinks if vertical space is tight */
+.videoStage {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  overflow: hidden;
+}
+
+@media (max-width: ($bp-lg - 1px)) {
+  .videoShell {
+    flex: 0 0 auto;
+    overflow: visible;
+  }
+
+  .videoStage {
+    flex: 0 0 auto;
+    overflow: visible;
+    justify-content: flex-start;
+  }
+
+  .main {
+    overflow: visible;
+  }
+}
+
+/* 16:9 player; on small/short viewports cap height so controls + page stay usable */
 .videoWrapper {
   position: relative;
   width: 100%;
+  max-width: 100%;
+  max-height: 100%;
   aspect-ratio: 16 / 9;
+  flex-shrink: 1;
+  min-height: 0;
+  min-width: 0;
   background: #0a0a12;
   border-radius: $radius-xl;
   overflow: hidden;
   border: 1px solid $color-border;
-  box-shadow: $shadow-md;
+  box-shadow: $shadow-lg;
+
+  @include respond(lg) {
+    max-height: min(85dvh, 960px);
+    width: min(100%, calc(min(85dvh, 960px) * 16 / 9));
+    margin-inline: auto;
+  }
+}
+
+@media (max-width: ($bp-lg - 1px)) {
+  /* Native <video>: no fixed 16:9 on the element — gives iOS/Android room for the browser control strip */
+  .videoWrapper:not(:has(.driveEmbedShell)) {
+    aspect-ratio: auto;
+    max-height: none;
+    width: 100%;
+    max-width: 100%;
+    margin-inline: auto;
+    overflow: visible;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+  }
+
+  /*
+   * Drive /preview iframe: default 16:9 wrapper is too short in portrait → crushed UI + fake “custom” bars.
+   * Use a taller box so Google’s player + controls fit.
+   */
+  .videoWrapper:has(.driveEmbedShell) {
+    aspect-ratio: auto;
+    width: 100%;
+    max-width: 100%;
+    min-height: 200px;
+    height: min(72dvh, 520px);
+    max-height: min(80dvh, calc(100dvh - 6.5rem));
+    margin-inline: auto;
+  }
+
+  .videoWrapper .video {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    aspect-ratio: unset;
+    max-height: min(70dvh, calc(100dvh - 10rem));
+    object-fit: contain;
+    object-position: center center;
+    /* Sharp corners on mobile: rounded <video> clips WebKit’s shadow-DOM controls */
+    border-radius: 0;
+    border: 1px solid $color-border;
+    box-shadow: $shadow-lg;
+    background: #000;
+    overflow: visible;
+  }
+}
+
+/* Phone / small tablet landscape: short vertical space — avoid squashing & overlapping UI */
+@media (max-width: ($bp-lg - 1px)) and (orientation: landscape) {
+  .topBar {
+    padding-top: $space-1;
+    padding-bottom: $space-1;
+  }
+
+  .main {
+    gap: $space-1;
+  }
+
+  .videoShell {
+    gap: $space-1;
+  }
+
+  .courseProgressBlock {
+    margin-top: $space-1;
+  }
+
+  /* Drive iframe: fixed height so the embed isn’t an ultra-short 16:9 strip */
+  .videoWrapper:has(.driveEmbedShell) {
+    aspect-ratio: auto;
+    width: 100%;
+    max-width: 100%;
+    height: min(82dvh, calc(100dvh - 4.5rem));
+    max-height: min(82dvh, calc(100dvh - 4.5rem));
+    margin-inline: auto;
+  }
+
+  /* HTML5 native controls: don’t lock 16:9 — lets the browser paint the control strip without overlap */
+  .videoWrapper:not(:has(.driveEmbedShell)) {
+    max-width: 100%;
+  }
+
+  .videoWrapper .video {
+    aspect-ratio: unset;
+    max-height: min(82dvh, calc(100dvh - 4.5rem));
+    width: 100%;
+    height: auto;
+    border-radius: 0;
+    overflow: visible;
+  }
 }
 
 .video {
@@ -129,6 +397,66 @@
   height: 100%;
   object-fit: contain;
   display: block;
+  background: #000;
+}
+
+@include respond(lg) {
+  .video {
+    border-radius: $radius-xl;
+    border: 1px solid $color-border;
+    box-shadow: $shadow-lg;
+  }
+}
+
+@media (max-width: ($bp-lg - 1px)) {
+  .courseProgressBlock {
+    margin-top: $space-2;
+  }
+
+  .courseProgressCaption {
+    font-size: $font-size-xs;
+  }
+
+  .courseProgressCaptionLead {
+    font-size: $font-size-xs;
+  }
+
+  .lessonTitle {
+    font-size: clamp(1rem, 4vw, 1.2rem);
+    line-height: 1.3;
+  }
+
+  .categoryPill {
+    font-size: 10px;
+    margin-bottom: $space-1;
+  }
+
+  .lessonDesc {
+    font-size: 11px;
+  }
+
+  .navBtn {
+    font-size: $font-size-xs;
+    padding: $space-1 $space-2;
+  }
+
+  .lessonNav {
+    padding-top: $space-2;
+  }
+}
+
+.driveEmbedOuter {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+
+.driveEmbedShell {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  overflow: hidden;
+  background: #0a0a0a;
 }
 
 .driveIframe {
@@ -140,34 +468,32 @@
   display: block;
 }
 
-.driveFooter {
-  margin-top: $space-4;
+/* Above Drive iframe / video so it stays tappable (Drive’s top-right “open” cannot be removed — use HTML5 or fullscreen). */
+.playerFullscreenBtn {
+  position: absolute;
+  z-index: 6;
+  right: $space-2;
+  bottom: calc(#{$space-2} + env(safe-area-inset-bottom, 0px));
+  width: 44px;
+  height: 44px;
   display: flex;
-  flex-direction: column;
-  gap: $space-3;
-}
-
-.driveNote {
-  margin: 0;
-  font-size: $font-size-sm;
-  color: $color-text-muted;
-  line-height: 1.5;
-}
-
-.markCompleteBtn {
-  align-self: flex-start;
-  padding: $space-2 $space-4;
-  font-size: $font-size-sm;
-  font-weight: $font-weight-medium;
-  color: #fff;
-  background: $gradient-primary;
-  border: none;
+  align-items: center;
+  justify-content: center;
   border-radius: $radius-md;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(12, 12, 18, 0.88);
+  color: #fff;
   cursor: pointer;
-  transition: opacity $transition-fast;
+  touch-action: manipulation;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
 
   &:hover {
-    opacity: 0.92;
+    background: rgba(28, 28, 36, 0.95);
+  }
+
+  &:focus-visible {
+    outline: 2px solid $color-primary;
+    outline-offset: 2px;
   }
 }
 
@@ -199,38 +525,67 @@
   border-radius: $radius-md;
   cursor: pointer;
   font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
 
   &:hover {
     opacity: 0.92;
   }
 }
 
-.progressSummary {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: $space-4;
-  font-size: $font-size-sm;
-  color: $color-text-muted;
+.courseProgressBlock {
+  flex-shrink: 0;
+  width: 100%;
+  max-width: 100%;
+  margin-top: $space-3;
 }
 
-.courseProgressBar {
-  height: 6px;
-  background: rgba($color-text-muted, 0.15);
+.courseProgressTrack {
+  height: 7px;
+  width: 100%;
   border-radius: $radius-full;
-  margin-top: $space-2;
+  background: color-mix(in srgb, var(--color-text-muted) 14%, transparent);
   overflow: hidden;
 }
 
 .courseProgressFill {
   height: 100%;
   border-radius: $radius-full;
-  background: linear-gradient(90deg, $color-primary, lighten($color-primary, 12%));
+  background: linear-gradient(90deg, $color-primary 0%, $color-secondary 100%);
   transition: width $transition-base;
 }
 
+.courseProgressCaption {
+  margin: $space-2 0 0;
+  padding: 0;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+  letter-spacing: 0.01em;
+}
+
+.courseProgressCaptionLead {
+  font-weight: $font-weight-semibold;
+  color: $color-text;
+}
+
+.courseProgressDot {
+  margin: 0 $space-2;
+  opacity: 0.55;
+  font-weight: $font-weight-normal;
+}
+
+.sidebarStats {
+  margin: 0 0 $space-3;
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+  line-height: 1.4;
+  flex-shrink: 0;
+}
+
 .lessonMeta {
-  margin-top: $space-6;
+  flex-shrink: 0;
+  margin-top: 0;
+  min-height: 0;
 }
 
 .categoryPill {
@@ -241,29 +596,57 @@
   margin-bottom: $space-2;
 }
 
+.lessonTitleRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-3;
+  margin: 0 0 $space-1;
+}
+
 .lessonTitle {
-  font-family: $font-heading;
-  font-size: $font-size-2xl;
+  font-family: $font-primary;
+  font-size: $font-size-xl;
   font-weight: $font-weight-bold;
   color: $color-text;
   line-height: $line-height-tight;
-  margin: 0 0 $space-2;
+  margin: 0;
+  flex: 1 1 auto;
+  min-width: min(100%, 10rem);
+}
+
+.markCompleteActions {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
 }
 
 .lessonDesc {
   margin: 0;
-  font-size: $font-size-sm;
+  font-size: $font-size-xs;
   color: $color-text-muted;
-  line-height: $line-height-relaxed;
+  line-height: $line-height-normal;
   max-width: 720px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.markCompleteError {
+  margin: 0 0 $space-2;
+  font-size: $font-size-xs;
+  color: $color-error;
 }
 
 .lessonNav {
+  flex-shrink: 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: $space-8;
-  padding-top: $space-4;
+  margin-top: 0;
+  padding-top: $space-2;
   border-top: 1px solid $color-border;
 }
 
@@ -285,9 +668,13 @@
 }
 
 .sidebar {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
   @include respond(lg) {
-    position: sticky;
-    top: $space-20;
+    max-height: 100%;
   }
 }
 
@@ -296,18 +683,76 @@
 }
 
 .sidebarOpen {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.sidebarHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: $space-3;
+  flex-shrink: 0;
+  margin-bottom: $space-2;
+}
+
+.sidebarCloseBtn {
+  @include button-reset;
+  display: none;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin-top: -2px;
+  border-radius: $radius-md;
+  color: $color-text-secondary;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  cursor: pointer;
+  transition:
+    color $transition-fast,
+    border-color $transition-fast,
+    background $transition-fast;
+
+  &:hover {
+    color: $color-text;
+    border-color: $color-border-light;
+    background: $color-surface-hover;
+  }
+}
+
+@media (max-width: ($bp-lg - 1px)) {
+  .sidebarCloseBtn {
+    display: inline-flex;
+  }
+
+  .sidebar.sidebarOpen .sidebarHeader {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    margin-bottom: $space-3;
+    padding-bottom: $space-3;
+    border-bottom: 1px solid $color-border;
+    background: $color-bg;
+  }
 }
 
 .sidebarTitle {
   font-size: $font-size-lg;
   font-weight: $font-weight-bold;
   color: $color-text;
-  margin: 0 0 $space-2;
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  line-height: $line-height-tight;
+  flex-shrink: 0;
 }
 
 .sidebarCourse {
   margin-bottom: $space-1;
+  flex-shrink: 0;
 }
 
 .sidebarCourseName {
@@ -316,20 +761,18 @@
   color: $color-text-secondary;
 }
 
-.sidebarStats {
-  margin: 0 0 $space-4;
-  font-size: $font-size-xs;
-  color: $color-text-muted;
-}
-
 .lessonList {
   list-style: none;
   margin: 0;
-  padding: 0;
+  padding: 0 $space-1 0 0;
   @include flex-col;
   gap: $space-2;
-  max-height: min(70vh, 640px);
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
 }
 
 .lessonItem {
@@ -342,6 +785,9 @@
   cursor: pointer;
   transition: border-color $transition-fast, background $transition-fast;
   position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
 
   &:hover {
     border-color: $color-border-light;
@@ -352,6 +798,22 @@
   border-color: rgba($color-primary, 0.55);
   background: rgba($color-primary, 0.08);
   box-shadow: inset 3px 0 0 $color-primary;
+}
+
+.lessonItemLocked {
+  cursor: not-allowed;
+  opacity: 0.72;
+  background: $color-bg-alt;
+
+  &:hover {
+    border-color: $color-border;
+  }
+}
+
+.lockIconLesson {
+  flex-shrink: 0;
+  color: $color-text-muted;
+  margin-top: 2px;
 }
 
 .lessonItemTop {
@@ -392,25 +854,34 @@
   margin: $space-1 0 0 24px;
 }
 
-.lessonMiniBar {
-  height: 3px;
-  background: rgba($color-text-muted, 0.2);
-  border-radius: $radius-full;
+.lessonStatus {
+  display: inline-block;
+  align-self: flex-start;
   margin: $space-2 0 0 24px;
-  overflow: hidden;
-}
-
-.lessonMiniFill {
-  height: 100%;
-  border-radius: $radius-full;
-  background: linear-gradient(90deg, $color-primary, lighten($color-primary, 8%));
-  transition: width $transition-base;
-}
-
-.lessonPct {
-  display: block;
   font-size: 10px;
-  font-weight: $font-weight-semibold;
+  font-weight: $font-weight-bold;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 3px $space-2;
+  border-radius: $radius-sm;
+}
+
+.lessonStatusDone {
+  color: $color-accent;
+  background: rgba($color-accent, 0.14);
+}
+
+.lessonStatusLocked {
   color: $color-text-muted;
-  margin: $space-1 0 0 24px;
+  background: rgba($color-text-muted, 0.12);
+}
+
+.lessonStatusPlaying {
+  color: $color-primary-light;
+  background: rgba($color-primary, 0.14);
+}
+
+.lessonStatusAvailable {
+  color: $color-text-secondary;
+  background: rgba($color-text-muted, 0.1);
 }

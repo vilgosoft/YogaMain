@@ -10,6 +10,9 @@ use App\Models\Category;
 use App\Models\Video;
 use App\Models\Enrollment;
 use App\Models\VideoProgress;
+use App\Models\CourseInterest;
+use App\Models\User;
+use App\Helpers\InterestMail;
 use App\Services\JwtService;
 
 class CourseController
@@ -101,6 +104,55 @@ class CourseController
         Response::json($this->courseModel->getLandingStats());
     }
 
+    /** GET /courses/upcoming — teaser courses for the home page */
+    public function upcoming(): void
+    {
+        $list    = $this->courseModel->getUpcomingPublic();
+        $courses = $this->attachEnrollmentFlags($list, $this->getOptionalAuthUser());
+        Response::json($courses);
+    }
+
+    /** POST /courses/interest — logged-in user registers interest; emails admin on first click */
+    public function expressInterest(): void
+    {
+        $auth = $GLOBALS['auth_user'] ?? null;
+        if (!$auth) {
+            Response::error('Authentication required', 'UNAUTHORIZED', 401);
+        }
+
+        $body     = json_decode(file_get_contents('php://input'), true) ?? [];
+        $courseId = (int) ($body['course_id'] ?? 0);
+        if ($courseId < 1) {
+            Response::error('course_id is required', 'VALIDATION_ERROR', 422);
+        }
+
+        $course = $this->courseModel->findById($courseId);
+        if (!$course || !(int) ($course['is_upcoming'] ?? 0)) {
+            Response::error('Course not found or not available for interest', 'NOT_FOUND', 404);
+        }
+
+        $userId   = (int) $auth['id'];
+        $interest = new CourseInterest();
+        $inserted = $interest->addIfNew($userId, $courseId);
+
+        if ($inserted) {
+            $adminEmail = $this->resolveAdminNotificationEmail();
+            if ($adminEmail !== '') {
+                $userRow = (new User())->findById($userId);
+                $name    = $userRow ? (string) $userRow['name'] : 'User';
+                $email   = $userRow ? (string) $userRow['email'] : (string) $auth['email'];
+                InterestMail::notifyAdminCourseInterest($adminEmail, $name, $email, (string) $course['title']);
+            }
+        }
+
+        Response::json([
+            'already_registered' => !$inserted,
+            'message'            => $inserted
+                ? 'Thanks! We will keep you posted.'
+                : 'You have already registered interest in this course.',
+        ]);
+    }
+
     /**
      * GET /videos/:id — returns play URL (HTML5 file or Google Drive preview iframe)
      */
@@ -114,7 +166,22 @@ class CourseController
         }
 
         if ($video['is_preview']) {
+            $authUser = $this->getOptionalAuthUser();
+            if ($authUser) {
+                $enrollmentModel = new Enrollment();
+                if ($enrollmentModel->isEnrolled($authUser['id'], (int) $video['course_id'])) {
+                    $ordered = $this->videoModel->getByCourseId((int) $video['course_id']);
+                    if (!$this->userHasUnlockedVideoInSequence($authUser['id'], $video, $ordered)) {
+                        Response::error(
+                            'Mark the previous lesson as complete before opening this one.',
+                            'LESSON_LOCKED',
+                            403
+                        );
+                    }
+                }
+            }
             Response::json($this->videoAccessPayload($video));
+
             return;
         }
 
@@ -128,12 +195,21 @@ class CourseController
             Response::error('You must be enrolled in this course', 'FORBIDDEN', 403);
         }
 
+        $ordered = $this->videoModel->getByCourseId((int) $video['course_id']);
+        if (!$this->userHasUnlockedVideoInSequence($authUser['id'], $video, $ordered)) {
+            Response::error(
+                'Mark the previous lesson as complete before opening this one.',
+                'LESSON_LOCKED',
+                403
+            );
+        }
+
         Response::json($this->videoAccessPayload($video));
     }
 
     /**
      * @param array<string, mixed> $video
-     * @return array{video_url: string, title: string, player_kind: string}
+     * @return array<string, mixed>
      */
     private function videoAccessPayload(array $video): array
     {
@@ -141,6 +217,9 @@ class CourseController
         if ($stored === '') {
             Response::error('Video URL not configured', 'VIDEO_NOT_FOUND', 404);
         }
+
+        $cap = trim((string) ($video['captions_url'] ?? ''));
+        $captionsOut = $cap !== '' ? $this->resolvePublicMediaUrl($cap) : null;
 
         if (GoogleDriveVideo::isDriveUrl($stored)) {
             $preview = GoogleDriveVideo::toPreviewUrl($stored);
@@ -152,18 +231,67 @@ class CourseController
                 );
             }
 
-            return [
-                'video_url'    => $preview,
-                'title'        => $video['title'],
-                'player_kind'  => 'drive_iframe',
+            $driveOpenUrl = GoogleDriveVideo::toFileViewUrl($stored);
+
+            $stream = GoogleDriveVideo::toDirectStreamUrl($stored);
+            if ($stream === null || $stream === '') {
+                $payload = [
+                    'video_url'   => $preview,
+                    'title'       => $video['title'],
+                    'player_kind' => 'drive_iframe',
+                ];
+                if ($driveOpenUrl !== null) {
+                    $payload['drive_open_url'] = $driveOpenUrl;
+                }
+                if ($captionsOut !== null) {
+                    $payload['captions_url'] = $captionsOut;
+                }
+
+                return $payload;
+            }
+
+            $payload = [
+                'video_url'                 => $stream,
+                'title'                     => $video['title'],
+                'player_kind'               => 'html5',
+                'drive_iframe_fallback_url' => $preview,
             ];
+            if ($driveOpenUrl !== null) {
+                $payload['drive_open_url'] = $driveOpenUrl;
+            }
+            if ($captionsOut !== null) {
+                $payload['captions_url'] = $captionsOut;
+            }
+
+            return $payload;
         }
 
-        return [
-            'video_url'    => $stored,
-            'title'        => $video['title'],
-            'player_kind'  => 'html5',
+        $payload = [
+            'video_url'   => $this->resolvePublicMediaUrl($stored),
+            'title'       => $video['title'],
+            'player_kind' => 'html5',
         ];
+        if ($captionsOut !== null) {
+            $payload['captions_url'] = $captionsOut;
+        }
+
+        return $payload;
+    }
+
+    private function resolvePublicMediaUrl(string $pathOrUrl): string
+    {
+        if (str_starts_with($pathOrUrl, 'http://') || str_starts_with($pathOrUrl, 'https://')) {
+            return $pathOrUrl;
+        }
+
+        $isSecure = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'
+            || ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https'
+            || ($_SERVER['REQUEST_SCHEME'] ?? '') === 'https'
+            || (int) ($_SERVER['SERVER_PORT'] ?? 0) === 443;
+        $scheme = $isSecure ? 'https' : 'http';
+        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+
+        return $scheme . '://' . $host . '/' . ltrim($pathOrUrl, '/');
     }
 
     private function viewerFromJwtOrGlobals(): ?array
@@ -217,6 +345,7 @@ class CourseController
         $lessons = [];
         $completedLessons = 0;
         $totalDurationSec = 0;
+        $prevComplete     = true;
 
         foreach ($videos as $v) {
             $vid = (int) $v['id'];
@@ -230,14 +359,10 @@ class CourseController
                 $completedLessons++;
             }
 
-            $lessonPct = 0;
-            if ($done) {
-                $lessonPct = 100;
-            } elseif ($dur > 0) {
-                $lessonPct = min(100, (int) round(($watched / $dur) * 100));
-            } elseif ($watched > 0) {
-                $lessonPct = 5;
-            }
+            $lessonPct = $done ? 100 : 0;
+
+            $isLocked = !$prevComplete;
+            $prevComplete = $done;
 
             $lessons[] = [
                 'id'                  => $vid,
@@ -249,6 +374,7 @@ class CourseController
                 'watched_sec'         => $watched,
                 'is_completed'        => $done,
                 'lesson_progress_pct' => $lessonPct,
+                'is_locked'           => $isLocked,
             ];
         }
 
@@ -297,6 +423,15 @@ class CourseController
         $enrollmentModel = new Enrollment();
         if (!$enrollmentModel->isEnrolled($userId, $courseId)) {
             Response::error('You must be enrolled in this course', 'FORBIDDEN', 403);
+        }
+
+        $ordered = $this->videoModel->getByCourseId($courseId);
+        if (!$this->userHasUnlockedVideoInSequence($userId, $video, $ordered)) {
+            Response::error(
+                'This lesson is locked until the previous one is marked complete.',
+                'LESSON_LOCKED',
+                403
+            );
         }
 
         $durationSec = $video['duration_sec'] !== null ? (int) $video['duration_sec'] : null;
@@ -360,5 +495,38 @@ class CourseController
         }
 
         return $courses;
+    }
+
+    /**
+     * @param array<string, mixed> $video
+     * @param array<int, array<string, mixed>> $orderedVideos
+     */
+    private function userHasUnlockedVideoInSequence(int $userId, array $video, array $orderedVideos): bool
+    {
+        $vp = new VideoProgress();
+        foreach ($orderedVideos as $i => $ov) {
+            if ((int) $ov['id'] !== (int) $video['id']) {
+                continue;
+            }
+            if ($i === 0) {
+                return true;
+            }
+            $prev    = $orderedVideos[$i - 1];
+            $prevRow = $vp->getForUserVideo($userId, (int) $prev['id']);
+
+            return $prevRow !== null && (int) $prevRow['is_completed'] === 1;
+        }
+
+        return false;
+    }
+
+    private function resolveAdminNotificationEmail(): string
+    {
+        $fromEnv = trim((string) ($_ENV['ADMIN_NOTIFICATION_EMAIL'] ?? ''));
+        if ($fromEnv !== '') {
+            return $fromEnv;
+        }
+
+        return (new User())->firstActiveAdminEmail() ?? '';
     }
 }

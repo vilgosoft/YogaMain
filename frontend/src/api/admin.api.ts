@@ -67,7 +67,17 @@ export async function uploadVideo(formData: FormData): Promise<Video> {
   return res.data.data!;
 }
 
-export async function updateVideo(id: number, data: Partial<Video>): Promise<Video> {
+export interface AdminVideoUpdatePayload {
+  title?: string;
+  description?: string | null;
+  duration_sec?: number | null;
+  sort_order?: number;
+  is_preview?: number;
+  video_url?: string;
+  captions_url?: string | null;
+}
+
+export async function updateVideo(id: number, data: AdminVideoUpdatePayload): Promise<Video> {
   const res = await client.put<ApiResponse<Video>>(`/admin/videos/${id}`, data);
   return res.data.data!;
 }

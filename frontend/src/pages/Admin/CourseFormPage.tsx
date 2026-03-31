@@ -25,7 +25,7 @@ export function CourseFormPage() {
   const [form, setForm] = useState({
     title: '', slug: '', category_id: '', description: '', short_desc: '',
     price: '0', discount_price: '', difficulty: 'beginner', duration_hours: '',
-    is_published: '0', is_free: '0', sort_order: '0',
+    is_published: '0', is_free: '0', is_upcoming: '0', sort_order: '0',
   });
 
   useEffect(() => {
@@ -44,6 +44,7 @@ export function CourseFormPage() {
             price: String(course.price), discount_price: course.discount_price ? String(course.discount_price) : '',
             difficulty: course.difficulty, duration_hours: course.duration_hours ? String(course.duration_hours) : '',
             is_published: String(course.is_published ? 1 : 0), is_free: String(course.is_free ? 1 : 0),
+            is_upcoming: String(course.is_upcoming ? 1 : 0),
             sort_order: String(course.sort_order),
           });
         }
@@ -204,6 +205,14 @@ export function CourseFormPage() {
             Free Course
           </label>
         </div>
+        <label style={{ ...checkboxLabel, marginTop: '0.5rem' }}>
+          <input
+            type="checkbox"
+            checked={form.is_upcoming === '1'}
+            onChange={(e) => setForm({ ...form, is_upcoming: e.target.checked ? '1' : '0' })}
+          />
+          Show under Upcoming on home (teaser + &quot;I&apos;m interested&quot;)
+        </label>
 
         <div className={styles.formActions}>
           <Button variant="secondary" type="button" onClick={() => navigate('/admin/courses')}>Cancel</Button>

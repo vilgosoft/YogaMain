@@ -1,5 +1,13 @@
 RewriteEngine On
 
+# Google Drive lessons load in an <iframe>. If the host injects Content-Security-Policy with
+# default-src 'self' (no frame-src), framing drive.google.com is blocked and the console shows
+# frame-ancestors / chrome-error://chromewebdata. Clear inherited CSP so index.html’s meta CSP applies.
+<IfModule mod_headers.c>
+  Header always unset Content-Security-Policy
+  Header always unset Content-Security-Policy-Report-Only
+</IfModule>
+
 # Force HTTPS
 RewriteCond %{HTTPS} off
 RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [R=301,L]

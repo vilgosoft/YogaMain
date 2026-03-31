@@ -40,6 +40,16 @@
   @include respond(md) { padding: 0 $space-8; }
 }
 
+@mixin container-fluid {
+  width: 100%;
+  max-width: none;
+  margin: 0 auto;
+  padding: 0 $space-4;
+  @include respond(md) {
+    padding: 0 clamp(1rem, 3vw, 2.75rem);
+  }
+}
+
 @mixin grid($min-col: 280px, $gap: $space-6) {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax($min-col, 1fr));

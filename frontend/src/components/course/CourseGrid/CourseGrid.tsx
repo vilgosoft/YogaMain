@@ -8,9 +8,17 @@ interface CourseGridProps {
   loading: boolean;
   emptyMessage?: string;
   onCourseClick?: (course: Course) => void;
+  /** Home featured: exactly three columns on large screens (no empty fourth slot). */
+  variant?: 'default' | 'featured';
 }
 
-export function CourseGrid({ courses, loading, emptyMessage = 'No courses found.', onCourseClick }: CourseGridProps) {
+export function CourseGrid({
+  courses,
+  loading,
+  emptyMessage = 'No courses found.',
+  onCourseClick,
+  variant = 'default',
+}: CourseGridProps) {
   if (loading) {
     return (
       <div className={styles.loading}>
@@ -24,7 +32,7 @@ export function CourseGrid({ courses, loading, emptyMessage = 'No courses found.
   }
 
   return (
-    <div className={styles.grid}>
+    <div className={variant === 'featured' ? styles.gridFeatured : styles.grid}>
       {courses.map((course) => (
         <CourseCard
           key={course.id}

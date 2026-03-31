@@ -2,14 +2,14 @@ import { useTheme } from '@/context/ThemeContext';
 import styles from './ThemeToggle.module.scss';
 
 /** Theme switch row for use inside menus (e.g. profile dropdown). */
-export function ThemeMenuRow() {
+export function ThemeMenuRow({ className = '' }: { className?: string }) {
   const { theme, toggleTheme } = useTheme();
   const isLight = theme === 'light';
 
   return (
     <button
       type="button"
-      className={styles.menuRow}
+      className={[styles.menuRow, className].filter(Boolean).join(' ')}
       onClick={toggleTheme}
       role="menuitem"
       aria-label={isLight ? 'Switch to dark theme' : 'Switch to light theme'}

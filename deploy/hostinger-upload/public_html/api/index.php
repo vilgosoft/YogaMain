@@ -285,9 +285,11 @@ $router->get('/admin/transactions',    [$adminTransactionController, 'index'], $
 // =============================================
 $courseController = new App\Controllers\CourseController();
 $router->get('/courses/featured', [$courseController, 'featured']);
+$router->get('/courses/upcoming', [$courseController, 'upcoming']);
 $router->get('/stats/landing',     [$courseController, 'landingStats']);
 $router->get('/courses',          [$courseController, 'index']);
 $router->get('/categories',       [$courseController, 'categories']);
+$router->post('/courses/interest', [$courseController, 'expressInterest'], [AuthMiddleware::class]);
 $router->get('/courses/:slug',    [$courseController, 'show']);
 
 $router->get('/videos/:id', [$courseController, 'getVideo']);

@@ -18,6 +18,22 @@ export async function getFeaturedCourses(): Promise<Course[]> {
   return res.data.data!;
 }
 
+export async function getUpcomingCourses(): Promise<Course[]> {
+  const res = await client.get<ApiResponse<Course[]>>('/courses/upcoming');
+  return res.data.data!;
+}
+
+export async function expressCourseInterest(courseId: number): Promise<{
+  already_registered: boolean;
+  message: string;
+}> {
+  const res = await client.post<ApiResponse<{ already_registered: boolean; message: string }>>(
+    '/courses/interest',
+    { course_id: courseId }
+  );
+  return res.data.data!;
+}
+
 export interface LandingStats {
   total_users: number;
   total_courses: number;
@@ -85,6 +101,8 @@ export interface PlayerLesson {
   watched_sec: number;
   is_completed: boolean;
   lesson_progress_pct: number;
+  /** True until the previous lesson in order reaches 100% progress */
+  is_locked: boolean;
 }
 
 export interface PlayerCurriculumResponse {

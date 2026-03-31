@@ -1,6 +1,17 @@
 // Light / dark tokens on <html data-theme="dark|light">.
 // Loaded before _variables.scss (see global.scss).
 
+:root {
+  /* Navbar + branding bar — used for full-viewport player height */
+  --app-header-height: 7.5rem;
+}
+
+@media (max-width: 768px) {
+  :root {
+    --app-header-height: 7.25rem;
+  }
+}
+
 :root,
 [data-theme='dark'] {
   color-scheme: dark;
@@ -21,10 +32,10 @@
 
   --gradient-card: linear-gradient(145deg, #161a33, #111427);
 
-  --shadow-sm: 0 1px 3px rgb(0 0 0 / 0.35);
-  --shadow-md: 0 4px 12px rgb(0 0 0 / 0.45);
-  --shadow-lg: 0 8px 30px rgb(0 0 0 / 0.55);
-  --shadow-card: 0 2px 8px rgb(0 0 0 / 0.35);
+  --shadow-sm: 0 1px 4px rgb(0 0 0 / 0.4);
+  --shadow-md: 0 6px 16px rgb(0 0 0 / 0.48);
+  --shadow-lg: 0 12px 36px rgb(0 0 0 / 0.58);
+  --shadow-card: 0 4px 14px rgb(0 0 0 / 0.38);
 
   --navbar-bg: color-mix(in srgb, var(--color-bg) 90%, transparent);
 }
@@ -48,10 +59,10 @@
 
   --gradient-card: linear-gradient(145deg, #ffffff, #f1f5f9);
 
-  --shadow-sm: 0 1px 2px rgb(15 23 42 / 0.06);
-  --shadow-md: 0 4px 12px rgb(15 23 42 / 0.08);
-  --shadow-lg: 0 12px 40px rgb(15 23 42 / 0.1);
-  --shadow-card: 0 1px 3px rgb(15 23 42 / 0.08);
+  --shadow-sm: 0 1px 3px rgb(15 23 42 / 0.07);
+  --shadow-md: 0 6px 18px rgb(15 23 42 / 0.09);
+  --shadow-lg: 0 14px 44px rgb(15 23 42 / 0.11);
+  --shadow-card: 0 2px 8px rgb(15 23 42 / 0.09);
 
   --navbar-bg: color-mix(in srgb, var(--color-bg) 88%, transparent);
 }

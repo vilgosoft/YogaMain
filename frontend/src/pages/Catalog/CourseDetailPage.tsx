@@ -127,6 +127,12 @@ export function CourseDetailPage() {
                 <HiOutlineFilm size={60} />
               </div>
             )}
+            {is_enrolled && (
+              <div className={styles.heroEnrolledBadge}>
+                <HiOutlineCheckCircle size={20} aria-hidden />
+                Enrolled
+              </div>
+            )}
           </div>
 
           {/* Course info */}

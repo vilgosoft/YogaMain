@@ -68,8 +68,7 @@ class Enrollment
     }
 
     /**
-     * Course % = average of each lesson's watch progress (0–100), so partial watching updates the bar.
-     * Milestones on the player UI use completed lesson count separately.
+     * Course % = average per lesson: 100 only when marked complete, 0 otherwise (no partial-watch bar).
      */
     public function updateProgress(int $userId, int $courseId): void
     {
@@ -98,13 +97,7 @@ class Enrollment
             $w    = (int) $r['watched_sec'];
             $done = (int) $r['is_completed'] === 1;
 
-            if ($done) {
-                $sum += 100;
-            } elseif ($dur > 0) {
-                $sum += min(100, (int) round(($w / $dur) * 100));
-            } else {
-                $sum += $w > 0 ? 5 : 0;
-            }
+            $sum += $done ? 100 : 0;
         }
 
         $pct = (int) round($sum / count($rows));

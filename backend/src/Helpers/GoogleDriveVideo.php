@@ -46,6 +46,36 @@ final class GoogleDriveVideo
     {
         $id = self::extractFileId($url);
 
-        return $id ? 'https://drive.google.com/file/d/' . $id . '/preview' : null;
+        // embedded=true improves embed behaviour in some browsers / hosting CSP setups
+        return $id ? 'https://drive.google.com/file/d/' . $id . '/preview?embedded=true' : null;
+    }
+
+    /**
+     * Full Drive file page — reliable playback controls on mobile (unlike /preview in an iframe).
+     */
+    public static function toFileViewUrl(string $url): ?string
+    {
+        $id = self::extractFileId($url);
+
+        return $id !== null && $id !== ''
+            ? 'https://drive.google.com/file/d/' . rawurlencode($id) . '/view'
+            : null;
+    }
+
+    /**
+     * Direct file URL for the HTML5 video element (mobile-friendly playback).
+     * Works for many "Anyone with the link" files; very large files may redirect to a virus-scan page
+     * (browser then fails — client can fall back to {@see toPreviewUrl} iframe).
+     *
+     * Browsers follow redirects; some files still return an HTML interstitial — the API also exposes
+     * the preview embed URL from the video API when direct playback fails.
+     */
+    public static function toDirectStreamUrl(string $url): ?string
+    {
+        $id = self::extractFileId($url);
+
+        return $id !== null && $id !== ''
+            ? 'https://drive.google.com/uc?export=download&id=' . rawurlencode($id)
+            : null;
     }
 }

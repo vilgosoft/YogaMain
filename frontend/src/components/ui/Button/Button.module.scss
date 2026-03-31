@@ -34,8 +34,12 @@
   // Variants
   &--primary {
     background: $gradient-primary;
-    color: $color-text;
+    color: #fff;
     box-shadow: 0 2px 10px rgba($color-primary, 0.3);
+
+    .icon {
+      color: #fff;
+    }
 
     &:hover:not(:disabled) {
       box-shadow: 0 4px 20px rgba($color-primary, 0.5);

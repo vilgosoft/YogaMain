@@ -3,11 +3,13 @@
   cursor: pointer;
   @include flex-col;
   position: relative;
+  border-radius: $radius-xl;
+  box-shadow: $shadow-card;
 
   &:hover {
     border-color: $color-primary;
-    transform: translateY(-4px);
-    box-shadow: $shadow-glow;
+    transform: translateY(-3px);
+    box-shadow: $shadow-md, $shadow-glow;
   }
 
   transition: transform $transition-base, border-color $transition-base, box-shadow $transition-base;
@@ -42,15 +44,25 @@
   position: absolute;
   top: $space-3;
   right: $space-3;
+  z-index: 2;
   display: inline-flex;
   align-items: center;
-  gap: $space-1;
-  background: rgba($color-accent, 0.2);
-  color: $color-accent;
+  gap: $space-2;
+  padding: $space-2 $space-3;
+  border-radius: $radius-md;
   font-size: $font-size-xs;
   font-weight: $font-weight-semibold;
-  padding: $space-1 $space-2;
-  border-radius: $radius-sm;
+  color: #fff;
+  background: rgba(15, 23, 42, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: $shadow-md;
+  text-transform: none;
+  letter-spacing: 0.02em;
+
+  svg {
+    color: #86efac;
+    flex-shrink: 0;
+  }
 }
 
 .category {
