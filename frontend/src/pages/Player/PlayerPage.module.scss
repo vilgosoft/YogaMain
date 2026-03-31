@@ -1,7 +1,12 @@
 .page {
   min-height: calc(100vh - 72px);
+  min-height: calc(100dvh - 72px);
   background: $color-bg;
-  padding-bottom: $space-10;
+  padding-bottom: $space-6;
+
+  @include respond(md) {
+    padding-bottom: $space-10;
+  }
 }
 
 .loading {
@@ -47,10 +52,16 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: $space-4;
-  padding-top: $space-4;
-  padding-bottom: $space-3;
+  gap: $space-2;
+  padding-top: $space-3;
+  padding-bottom: $space-2;
   flex-wrap: wrap;
+
+  @include respond(md) {
+    gap: $space-4;
+    padding-top: $space-4;
+    padding-bottom: $space-3;
+  }
 }
 
 .backOverview {
@@ -58,9 +69,13 @@
   align-items: center;
   gap: $space-1;
   color: $color-primary-light;
-  font-size: $font-size-sm;
+  font-size: $font-size-xs;
   font-weight: $font-weight-medium;
   text-decoration: none;
+
+  @include respond(md) {
+    font-size: $font-size-sm;
+  }
 
   &:hover {
     text-decoration: underline;
@@ -70,15 +85,21 @@
 .toggleSidebar {
   display: inline-flex;
   align-items: center;
-  gap: $space-2;
+  gap: $space-1;
   background: $color-surface;
   border: 1px solid $color-border;
   color: $color-text-secondary;
-  font-size: $font-size-sm;
-  padding: $space-2 $space-3;
+  font-size: $font-size-xs;
+  padding: $space-1 $space-2;
   border-radius: $radius-md;
   cursor: pointer;
   transition: border-color $transition-fast, color $transition-fast;
+
+  @include respond(md) {
+    gap: $space-2;
+    font-size: $font-size-sm;
+    padding: $space-2 $space-3;
+  }
 
   &:hover {
     border-color: $color-border-light;
@@ -116,15 +137,27 @@
 .videoWrapper {
   position: relative;
   width: 100%;
-  aspect-ratio: 16 / 9;
   background: #0a0a12;
-  border-radius: $radius-xl;
+  border-radius: $radius-md;
   overflow: hidden;
   border: 1px solid $color-border;
-  box-shadow: $shadow-md;
+
+  // Mobile: use padding-bottom trick for reliable 16:9
+  &::before {
+    content: '';
+    display: block;
+    padding-bottom: 56.25%; // 9/16
+  }
+
+  @include respond(md) {
+    border-radius: $radius-xl;
+    box-shadow: $shadow-md;
+  }
 }
 
 .video {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: contain;
@@ -141,10 +174,15 @@
 }
 
 .driveFooter {
-  margin-top: $space-4;
+  margin-top: $space-3;
   display: flex;
   flex-direction: column;
-  gap: $space-3;
+  gap: $space-2;
+
+  @include respond(md) {
+    margin-top: $space-4;
+    gap: $space-3;
+  }
 }
 
 .driveNote {
@@ -183,11 +221,11 @@
   @include flex-col;
   align-items: center;
   justify-content: center;
-  height: 100%;
-  min-height: 200px;
+  position: absolute;
+  inset: 0;
   color: $color-text-muted;
   gap: $space-3;
-  padding: $space-6;
+  padding: $space-4;
   text-align: center;
 }
 
@@ -230,7 +268,11 @@
 }
 
 .lessonMeta {
-  margin-top: $space-6;
+  margin-top: $space-4;
+
+  @include respond(md) {
+    margin-top: $space-6;
+  }
 }
 
 .categoryPill {
@@ -243,11 +285,15 @@
 
 .lessonTitle {
   font-family: $font-heading;
-  font-size: $font-size-2xl;
+  font-size: $font-size-lg;
   font-weight: $font-weight-bold;
   color: $color-text;
   line-height: $line-height-tight;
   margin: 0 0 $space-2;
+
+  @include respond(md) {
+    font-size: $font-size-2xl;
+  }
 }
 
 .lessonDesc {
@@ -262,9 +308,14 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: $space-8;
-  padding-top: $space-4;
+  margin-top: $space-4;
+  padding-top: $space-3;
   border-top: 1px solid $color-border;
+
+  @include respond(md) {
+    margin-top: $space-8;
+    padding-top: $space-4;
+  }
 }
 
 .navBtn {
@@ -285,9 +336,12 @@
 }
 
 .sidebar {
+  order: 2;
+
   @include respond(lg) {
     position: sticky;
     top: $space-20;
+    order: unset;
   }
 }
 
@@ -328,8 +382,12 @@
   padding: 0;
   @include flex-col;
   gap: $space-2;
-  max-height: min(70vh, 640px);
+  max-height: 400px;
   overflow-y: auto;
+
+  @include respond(lg) {
+    max-height: min(70vh, 640px);
+  }
 }
 
 .lessonItem {
