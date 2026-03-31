@@ -1,12 +1,9 @@
+/* ── Page shell ── */
 .page {
   min-height: calc(100vh - 72px);
   min-height: calc(100dvh - 72px);
   background: $color-bg;
   padding-bottom: $space-6;
-
-  @include respond(md) {
-    padding-bottom: $space-10;
-  }
 }
 
 .loading {
@@ -47,18 +44,17 @@
   }
 }
 
+/* ── Top bar ── */
 .topBar {
   @include container;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: $space-2;
-  padding-top: $space-3;
+  padding-top: $space-2;
   padding-bottom: $space-2;
-  flex-wrap: wrap;
 
   @include respond(md) {
-    gap: $space-4;
     padding-top: $space-4;
     padding-bottom: $space-3;
   }
@@ -69,37 +65,47 @@
   align-items: center;
   gap: $space-1;
   color: $color-primary-light;
-  font-size: $font-size-xs;
+  font-size: $font-size-sm;
   font-weight: $font-weight-medium;
   text-decoration: none;
-
-  @include respond(md) {
-    font-size: $font-size-sm;
-  }
+  white-space: nowrap;
 
   &:hover {
     text-decoration: underline;
   }
 }
 
-.toggleSidebar {
-  display: inline-flex;
+.backText {
+  @media (max-width: 479px) {
+    display: none;
+  }
+}
+
+.topBarRight {
+  display: flex;
   align-items: center;
-  gap: $space-1;
+  gap: $space-3;
+}
+
+.topProgress {
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+  white-space: nowrap;
+}
+
+.toggleSidebar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
   background: $color-surface;
   border: 1px solid $color-border;
   color: $color-text-secondary;
-  font-size: $font-size-xs;
-  padding: $space-1 $space-2;
   border-radius: $radius-md;
   cursor: pointer;
   transition: border-color $transition-fast, color $transition-fast;
-
-  @include respond(md) {
-    gap: $space-2;
-    font-size: $font-size-sm;
-    padding: $space-2 $space-3;
-  }
+  flex-shrink: 0;
 
   &:hover {
     border-color: $color-border-light;
@@ -107,126 +113,89 @@
   }
 }
 
+/* ── Layout ── */
 .layout {
   @include container;
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: $space-6;
-  align-items: start;
-
-  @include respond(lg) {
-    grid-template-columns: minmax(0, 1fr) 320px;
-    gap: $space-8;
-  }
-}
-
-.layoutNoSidebar {
-  @include respond(lg) {
-    grid-template-columns: 1fr;
-  }
+  position: relative;
 }
 
 .main {
   min-width: 0;
+
+  @include respond(lg) {
+    margin-right: 340px;
+
+    .sidebar:not(.sidebarOpen) ~ & {
+      margin-right: 0;
+    }
+  }
 }
 
-.videoShell {
-  width: 100%;
-}
-
-.videoWrapper {
+/* ── Player container ── */
+.playerContainer {
   position: relative;
   width: 100%;
-  background: #0a0a12;
+  padding-top: 56.25%; /* 16:9 */
+  background: #000;
   border-radius: $radius-md;
   overflow: hidden;
-  border: 1px solid $color-border;
-
-  // Mobile: use padding-bottom trick for reliable 16:9
-  &::before {
-    content: '';
-    display: block;
-    padding-bottom: 56.25%; // 9/16
-  }
 
   @include respond(md) {
     border-radius: $radius-xl;
-    box-shadow: $shadow-md;
+  }
+
+  // React Player needs to fill the container
+  :global(.react-player) {
+    position: absolute !important;
+    top: 0;
+    left: 0;
   }
 }
 
-.video {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  display: block;
+.reactPlayer {
+  position: absolute !important;
+  top: 0;
+  left: 0;
+  width: 100% !important;
+  height: 100% !important;
+
+  video {
+    object-fit: contain;
+  }
 }
 
 .driveIframe {
   position: absolute;
-  inset: 0;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
   border: 0;
-  display: block;
 }
 
-.driveFooter {
-  margin-top: $space-3;
-  display: flex;
-  flex-direction: column;
-  gap: $space-2;
-
-  @include respond(md) {
-    margin-top: $space-4;
-    gap: $space-3;
-  }
-}
-
-.driveNote {
-  margin: 0;
-  font-size: $font-size-sm;
-  color: $color-text-muted;
-  line-height: 1.5;
-}
-
-.markCompleteBtn {
-  align-self: flex-start;
-  padding: $space-2 $space-4;
-  font-size: $font-size-sm;
-  font-weight: $font-weight-medium;
-  color: #fff;
-  background: $gradient-primary;
-  border: none;
-  border-radius: $radius-md;
-  cursor: pointer;
-  transition: opacity $transition-fast;
-
-  &:hover {
-    opacity: 0.92;
-  }
-}
-
-.videoLoading {
+.playerOverlay {
   position: absolute;
   inset: 0;
   @include flex-center;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 2;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 5;
 }
 
 .noVideo {
-  @include flex-col;
-  align-items: center;
-  justify-content: center;
   position: absolute;
   inset: 0;
-  color: $color-text-muted;
+  @include flex-center;
+  flex-direction: column;
   gap: $space-3;
+  color: $color-text-muted;
   padding: $space-4;
   text-align: center;
+
+  p {
+    margin: 0;
+    font-size: $font-size-sm;
+    max-width: 300px;
+  }
 }
 
 .retryBtn {
@@ -239,35 +208,58 @@
   font-size: $font-size-sm;
 
   &:hover {
-    opacity: 0.92;
+    opacity: 0.9;
   }
 }
 
-.progressSummary {
+/* ── Drive footer ── */
+.driveFooter {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-top: $space-4;
+  flex-wrap: wrap;
+  gap: $space-2;
+  margin-top: $space-3;
+  padding: $space-3;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+}
+
+.driveNote {
+  margin: 0;
   font-size: $font-size-sm;
   color: $color-text-muted;
+  flex: 1;
+  min-width: 200px;
 }
 
-.courseProgressBar {
-  height: 6px;
-  background: rgba($color-text-muted, 0.15);
-  border-radius: $radius-full;
-  margin-top: $space-2;
-  overflow: hidden;
+.markCompleteBtn {
+  padding: $space-2 $space-4;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: #fff;
+  background: $gradient-primary;
+  border: none;
+  border-radius: $radius-md;
+  cursor: pointer;
+  white-space: nowrap;
+
+  &:hover {
+    opacity: 0.9;
+  }
 }
 
-.courseProgressFill {
-  height: 100%;
-  border-radius: $radius-full;
-  background: linear-gradient(90deg, $color-primary, lighten($color-primary, 12%));
-  transition: width $transition-base;
+.completedBadge {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  color: $color-accent;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
 }
 
-.lessonMeta {
+/* ── Lesson info ── */
+.lessonInfo {
   margin-top: $space-4;
 
   @include respond(md) {
@@ -275,12 +267,16 @@
   }
 }
 
+.lessonHeader {
+  margin-bottom: $space-4;
+}
+
 .categoryPill {
   display: inline-block;
   font-size: $font-size-xs;
   font-weight: $font-weight-semibold;
   color: $color-primary-light;
-  margin-bottom: $space-2;
+  margin-bottom: $space-1;
 }
 
 .lessonTitle {
@@ -289,10 +285,10 @@
   font-weight: $font-weight-bold;
   color: $color-text;
   line-height: $line-height-tight;
-  margin: 0 0 $space-2;
+  margin: 0 0 $space-1;
 
   @include respond(md) {
-    font-size: $font-size-2xl;
+    font-size: $font-size-xl;
   }
 }
 
@@ -301,21 +297,46 @@
   font-size: $font-size-sm;
   color: $color-text-muted;
   line-height: $line-height-relaxed;
-  max-width: 720px;
+  max-width: 640px;
 }
 
+/* ── Progress ── */
+.progressRow {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  margin-bottom: $space-4;
+}
+
+.progressBar {
+  flex: 1;
+  height: 6px;
+  background: rgba($color-text-muted, 0.15);
+  border-radius: $radius-full;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: $radius-full;
+  background: linear-gradient(90deg, $color-primary, lighten($color-primary, 12%));
+  transition: width $transition-base;
+}
+
+.progressLabel {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-text-muted;
+  white-space: nowrap;
+}
+
+/* ── Lesson nav ── */
 .lessonNav {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: $space-4;
   padding-top: $space-3;
   border-top: 1px solid $color-border;
-
-  @include respond(md) {
-    margin-top: $space-8;
-    padding-top: $space-4;
-  }
 }
 
 .navBtn {
@@ -335,43 +356,85 @@
   }
 }
 
+.navBtnNext {
+  margin-left: auto;
+}
+
+/* ── Sidebar ── */
 .sidebar {
-  order: 2;
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 320px;
+  max-width: 85vw;
+  background: $color-bg;
+  border-left: 1px solid $color-border;
+  z-index: 100;
+  transform: translateX(100%);
+  transition: transform 0.25s ease;
+  overflow-y: auto;
+  padding: $space-4;
+  display: flex;
+  flex-direction: column;
 
   @include respond(lg) {
-    position: sticky;
-    top: $space-20;
-    order: unset;
+    position: fixed;
+    width: 340px;
   }
 }
 
-.sidebarClosed {
-  display: none;
+.sidebarOpen {
+  transform: translateX(0);
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.3);
 }
 
-.sidebarOpen {
-  display: block;
+.sidebarBackdrop {
+  display: none;
+
+  .sidebarOpen ~ & {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 99;
+  }
+}
+
+.sidebarHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $space-2;
 }
 
 .sidebarTitle {
-  font-size: $font-size-lg;
+  font-size: $font-size-base;
   font-weight: $font-weight-bold;
   color: $color-text;
-  margin: 0 0 $space-2;
+  margin: 0;
 }
 
-.sidebarCourse {
-  margin-bottom: $space-1;
-}
+.sidebarClose {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: none;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  color: $color-text-muted;
+  cursor: pointer;
 
-.sidebarCourseName {
-  font-size: $font-size-sm;
-  font-weight: $font-weight-semibold;
-  color: $color-text-secondary;
+  &:hover {
+    color: $color-text;
+    border-color: $color-border-light;
+  }
 }
 
 .sidebarStats {
-  margin: 0 0 $space-4;
+  margin: 0 0 $space-3;
   font-size: $font-size-xs;
   color: $color-text-muted;
 }
@@ -380,14 +443,11 @@
   list-style: none;
   margin: 0;
   padding: 0;
-  @include flex-col;
-  gap: $space-2;
-  max-height: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+  flex: 1;
   overflow-y: auto;
-
-  @include respond(lg) {
-    max-height: min(70vh, 640px);
-  }
 }
 
 .lessonItem {
@@ -396,10 +456,9 @@
   background: $color-surface;
   border: 1px solid $color-border;
   border-radius: $radius-md;
-  padding: $space-3 $space-3 $space-2;
+  padding: $space-2 $space-3;
   cursor: pointer;
   transition: border-color $transition-fast, background $transition-fast;
-  position: relative;
 
   &:hover {
     border-color: $color-border-light;
@@ -407,9 +466,13 @@
 }
 
 .lessonItemActive {
-  border-color: rgba($color-primary, 0.55);
+  border-color: rgba($color-primary, 0.5);
   background: rgba($color-primary, 0.08);
   box-shadow: inset 3px 0 0 $color-primary;
+}
+
+.lessonItemDone {
+  opacity: 0.75;
 }
 
 .lessonItemTop {
@@ -420,6 +483,12 @@
 
 .lessonPlayIcon {
   color: $color-primary-light;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.lessonCheckIcon {
+  color: $color-accent;
   flex-shrink: 0;
   margin-top: 2px;
 }
@@ -437,24 +506,31 @@
   font-size: 10px;
   font-weight: $font-weight-bold;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
   color: $color-accent;
   background: rgba($color-accent, 0.12);
-  padding: 2px $space-2;
+  padding: 1px $space-1;
   border-radius: $radius-sm;
 }
 
-.lessonItemMeta {
+.lessonItemBottom {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  margin-top: $space-1;
+  padding-left: 24px;
+}
+
+.lessonDuration {
   font-size: $font-size-xs;
   color: $color-text-subtle;
-  margin: $space-1 0 0 24px;
+  white-space: nowrap;
 }
 
 .lessonMiniBar {
+  flex: 1;
   height: 3px;
   background: rgba($color-text-muted, 0.2);
   border-radius: $radius-full;
-  margin: $space-2 0 0 24px;
   overflow: hidden;
 }
 
@@ -463,12 +539,4 @@
   border-radius: $radius-full;
   background: linear-gradient(90deg, $color-primary, lighten($color-primary, 8%));
   transition: width $transition-base;
-}
-
-.lessonPct {
-  display: block;
-  font-size: 10px;
-  font-weight: $font-weight-semibold;
-  color: $color-text-muted;
-  margin: $space-1 0 0 24px;
 }

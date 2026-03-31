@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import ReactPlayer from 'react-player';
 import client from '@/api/client';
 import type { ApiResponse } from '@/types/api.types';
 import {
@@ -20,6 +21,7 @@ import {
   HiOutlineChevronRight,
   HiOutlineBars3,
   HiOutlineXMark,
+  HiOutlineCheckCircle,
 } from 'react-icons/hi2';
 import styles from './PlayerPage.module.scss';
 
@@ -32,7 +34,7 @@ interface VideoAccess {
 export function PlayerPage() {
   const { courseId, videoId } = useParams<{ courseId: string; videoId: string }>();
   const navigate = useNavigate();
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const playerRef = useRef<ReactPlayer>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [curriculum, setCurriculum] = useState<PlayerCurriculumResponse | null>(null);
@@ -42,7 +44,10 @@ export function PlayerPage() {
   const [loadingVideo, setLoadingVideo] = useState(true);
   const [loadingCurriculum, setLoadingCurriculum] = useState(true);
   const [videoError, setVideoError] = useState('');
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [playing, setPlaying] = useState(false);
+  const [played, setPlayed] = useState(0);
+  const [duration, setDuration] = useState(0);
 
   const currentVideoId = videoId ? parseInt(videoId, 10) : 0;
   const currentCourseId = courseId ? parseInt(courseId, 10) : 0;
@@ -82,6 +87,9 @@ export function PlayerPage() {
     setVideoError('');
     setVideoUrl(null);
     setPlayerKind('html5');
+    setPlaying(false);
+    setPlayed(0);
+    setDuration(0);
 
     client
       .get<ApiResponse<VideoAccess>>(`/videos/${currentVideoId}`)
@@ -104,9 +112,9 @@ export function PlayerPage() {
 
   const flushProgress = useCallback(
     async (markComplete: boolean) => {
-      const el = videoRef.current;
-      if (!el || !currentVideoId) return;
-      const sec = Math.floor(el.currentTime);
+      const player = playerRef.current;
+      const sec = player ? Math.floor(player.getCurrentTime()) : 0;
+      if (!currentVideoId) return;
       try {
         const { course_progress_pct } = await postVideoProgress(currentVideoId, {
           watched_sec: sec,
@@ -190,30 +198,6 @@ export function PlayerPage() {
     };
   }, []);
 
-  const handleVideoError = useCallback(() => {
-    const video = videoRef.current;
-    if (!video) return;
-    const err = video.error;
-    let msg = 'Unable to play this video.';
-    if (err) {
-      switch (err.code) {
-        case MediaError.MEDIA_ERR_ABORTED:
-          msg = 'Video playback was aborted.';
-          break;
-        case MediaError.MEDIA_ERR_NETWORK:
-          msg = 'A network error prevented the video from loading.';
-          break;
-        case MediaError.MEDIA_ERR_DECODE:
-          msg = 'The video format is not supported by your browser.';
-          break;
-        case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
-          msg = 'The video file could not be loaded.';
-          break;
-      }
-    }
-    setVideoError(msg);
-  }, []);
-
   const currentLesson = curriculum?.lessons.find((l) => l.id === currentVideoId);
   const lessonIndex = curriculum?.lessons.findIndex((l) => l.id === currentVideoId) ?? -1;
   const prevLesson = lessonIndex > 0 ? curriculum?.lessons[lessonIndex - 1] : undefined;
@@ -258,163 +242,205 @@ export function PlayerPage() {
   const { course, lessons, completed_lessons, total_lessons, course_progress_pct, total_duration_sec } =
     curriculum;
 
+  const isDriveLesson = playerKind === 'drive_iframe';
+  const isCurrentCompleted = currentLesson?.is_completed ?? false;
+
   return (
     <PageWrapper>
       <div className={styles.page}>
         <header className={styles.topBar}>
           <Link to={`/courses/${course.slug}`} className={styles.backOverview}>
             <HiOutlineChevronLeft size={18} />
-            Back to course overview
+            <span className={styles.backText}>Back to course</span>
           </Link>
-          <button
-            type="button"
-            className={styles.toggleSidebar}
-            onClick={() => setSidebarOpen((o) => !o)}
-            aria-expanded={sidebarOpen}
-          >
-            {sidebarOpen ? (
-              <>
-                <HiOutlineXMark size={18} /> Hide content
-              </>
-            ) : (
-              <>
-                <HiOutlineBars3 size={18} /> Show content
-              </>
-            )}
-          </button>
+          <div className={styles.topBarRight}>
+            <span className={styles.topProgress}>
+              {course_progress_pct}% · {completed_lessons}/{total_lessons}
+            </span>
+            <button
+              type="button"
+              className={styles.toggleSidebar}
+              onClick={() => setSidebarOpen((o) => !o)}
+              aria-expanded={sidebarOpen}
+            >
+              {sidebarOpen ? <HiOutlineXMark size={20} /> : <HiOutlineBars3 size={20} />}
+            </button>
+          </div>
         </header>
 
-        <div className={`${styles.layout} ${!sidebarOpen ? styles.layoutNoSidebar : ''}`}>
+        <div className={styles.layout}>
           <div className={styles.main}>
-            <div className={styles.videoShell}>
-              <div className={styles.videoWrapper}>
-                {loadingVideo && (
-                  <div className={styles.videoLoading}>
-                    <Spinner />
-                  </div>
-                )}
-                {videoUrl && !videoError && playerKind === 'html5' ? (
-                  <video
-                    ref={videoRef}
-                    key={videoUrl}
-                    src={videoUrl}
-                    controls
-                    playsInline
-                    className={styles.video}
-                    controlsList="nodownload"
-                    onContextMenu={(e) => e.preventDefault()}
-                    onError={handleVideoError}
-                    onLoadedMetadata={() => {
-                      const el = videoRef.current;
-                      const l = currentLesson;
-                      if (!el || !l || l.is_completed) return;
-                      if (l.watched_sec > 0 && Number.isFinite(el.duration) && el.duration > 0) {
-                        el.currentTime = Math.min(l.watched_sec, Math.max(0, el.duration - 0.5));
-                      }
-                    }}
-                    onTimeUpdate={() => scheduleDebouncedSave()}
-                    onPause={() => void flushProgress(false)}
-                    onEnded={() => void flushProgress(true)}
-                  >
-                    Your browser does not support the video tag.
-                  </video>
-                ) : videoUrl && !videoError && playerKind === 'drive_iframe' ? (
-                  <iframe
-                    key={videoUrl}
-                    src={videoUrl}
-                    className={styles.driveIframe}
-                    title={currentLesson?.title ?? 'Lesson video'}
-                    allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
-                    allowFullScreen
-                  />
-                ) : !loadingVideo ? (
-                  <div className={styles.noVideo}>
-                    <HiOutlineExclamationTriangle size={48} />
-                    <p>{videoError || 'Video not available'}</p>
-                    <button
-                      type="button"
-                      className={styles.retryBtn}
-                      onClick={() => {
-                        setVideoError('');
-                        setVideoUrl(null);
-                        setLoadingVideo(true);
-                        client
-                          .get<ApiResponse<VideoAccess>>(`/videos/${currentVideoId}`)
-                          .then((res) => {
-                            const data = res.data.data!;
-                            setPlayerKind(data.player_kind === 'drive_iframe' ? 'drive_iframe' : 'html5');
-                            setVideoUrl(normalizeUrl(data.video_url));
-                          })
-                          .catch(() => setVideoError('Failed to load video'))
-                          .finally(() => setLoadingVideo(false));
-                      }}
-                    >
-                      Retry
-                    </button>
-                  </div>
-                ) : null}
-              </div>
-              {videoUrl && !videoError && playerKind === 'drive_iframe' && !loadingVideo && (
-                <div className={styles.driveFooter}>
-                  <p className={styles.driveNote}>
-                    This lesson is hosted on Google Drive. When you have finished watching, mark it complete
-                    so your course progress updates.
-                  </p>
-                  <button type="button" className={styles.markCompleteBtn} onClick={() => void markDriveLessonComplete()}>
-                    Mark lesson complete
-                  </button>
+            {/* Video Player */}
+            <div className={styles.playerContainer}>
+              {loadingVideo && (
+                <div className={styles.playerOverlay}>
+                  <Spinner />
                 </div>
               )}
+
+              {videoUrl && !videoError && !isDriveLesson ? (
+                <ReactPlayer
+                  ref={playerRef}
+                  url={videoUrl}
+                  playing={playing}
+                  controls
+                  width="100%"
+                  height="100%"
+                  className={styles.reactPlayer}
+                  config={{
+                    file: {
+                      attributes: {
+                        controlsList: 'nodownload',
+                        playsInline: true,
+                        onContextMenu: (e: React.MouseEvent) => e.preventDefault(),
+                      },
+                    },
+                  }}
+                  onReady={() => {
+                    const l = currentLesson;
+                    if (!l || l.is_completed) return;
+                    const player = playerRef.current;
+                    if (player && l.watched_sec > 0) {
+                      const dur = player.getDuration();
+                      if (dur > 0) {
+                        player.seekTo(Math.min(l.watched_sec, Math.max(0, dur - 0.5)), 'seconds');
+                      }
+                    }
+                  }}
+                  onPlay={() => setPlaying(true)}
+                  onPause={() => {
+                    setPlaying(false);
+                    void flushProgress(false);
+                  }}
+                  onEnded={() => {
+                    setPlaying(false);
+                    void flushProgress(true);
+                  }}
+                  onProgress={({ playedSeconds }) => {
+                    setPlayed(playedSeconds);
+                    scheduleDebouncedSave();
+                  }}
+                  onDuration={(d) => setDuration(d)}
+                  onError={() => setVideoError('Unable to play this video. Please try again.')}
+                />
+              ) : videoUrl && !videoError && isDriveLesson ? (
+                <iframe
+                  key={videoUrl}
+                  src={videoUrl}
+                  className={styles.driveIframe}
+                  title={currentLesson?.title ?? 'Lesson video'}
+                  allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+                  allowFullScreen
+                />
+              ) : !loadingVideo && videoError ? (
+                <div className={styles.noVideo}>
+                  <HiOutlineExclamationTriangle size={40} />
+                  <p>{videoError}</p>
+                  <button
+                    type="button"
+                    className={styles.retryBtn}
+                    onClick={() => {
+                      setVideoError('');
+                      setVideoUrl(null);
+                      setLoadingVideo(true);
+                      client
+                        .get<ApiResponse<VideoAccess>>(`/videos/${currentVideoId}`)
+                        .then((res) => {
+                          const data = res.data.data!;
+                          setPlayerKind(data.player_kind === 'drive_iframe' ? 'drive_iframe' : 'html5');
+                          setVideoUrl(normalizeUrl(data.video_url));
+                        })
+                        .catch(() => setVideoError('Failed to load video'))
+                        .finally(() => setLoadingVideo(false));
+                    }}
+                  >
+                    Retry
+                  </button>
+                </div>
+              ) : null}
             </div>
 
-            <div className={styles.progressSummary}>
-              <span>{course_progress_pct}% Complete</span>
-              <span>
-                {completed_lessons}/{total_lessons} lessons done
-              </span>
-            </div>
-            <div className={styles.courseProgressBar}>
-              <div
-                className={styles.courseProgressFill}
-                style={{ width: `${Math.min(100, course_progress_pct)}%` }}
-              />
-            </div>
+            {/* Drive lesson: mark complete */}
+            {isDriveLesson && videoUrl && !videoError && !loadingVideo && (
+              <div className={styles.driveFooter}>
+                {isCurrentCompleted ? (
+                  <div className={styles.completedBadge}>
+                    <HiOutlineCheckCircle size={18} />
+                    Lesson completed
+                  </div>
+                ) : (
+                  <>
+                    <p className={styles.driveNote}>
+                      When you finish watching, mark this lesson complete.
+                    </p>
+                    <button
+                      type="button"
+                      className={styles.markCompleteBtn}
+                      onClick={() => void markDriveLessonComplete()}
+                    >
+                      Mark lesson complete
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
 
-            <div className={styles.lessonMeta}>
-              {course.category_name && (
-                <span className={styles.categoryPill}>{course.category_name}</span>
-              )}
-              <h1 className={styles.lessonTitle}>{currentLesson?.title ?? 'Lesson'}</h1>
-              {currentLesson?.description && (
-                <p className={styles.lessonDesc}>{currentLesson.description}</p>
-              )}
-            </div>
+            {/* Lesson info + nav */}
+            <div className={styles.lessonInfo}>
+              <div className={styles.lessonHeader}>
+                {course.category_name && (
+                  <span className={styles.categoryPill}>{course.category_name}</span>
+                )}
+                <h1 className={styles.lessonTitle}>{currentLesson?.title ?? 'Lesson'}</h1>
+                {currentLesson?.description && (
+                  <p className={styles.lessonDesc}>{currentLesson.description}</p>
+                )}
+              </div>
 
-            <nav className={styles.lessonNav}>
-              {prevLesson ? (
-                <button type="button" className={styles.navBtn} onClick={() => goToLesson(prevLesson.id)}>
-                  <HiOutlineChevronLeft size={18} /> Previous
-                </button>
-              ) : (
-                <span />
-              )}
-              {nextLesson ? (
-                <button type="button" className={styles.navBtn} onClick={() => goToLesson(nextLesson.id)}>
-                  Next <HiOutlineChevronRight size={18} />
-                </button>
-              ) : (
-                <span />
-              )}
-            </nav>
+              {/* Progress bar */}
+              <div className={styles.progressRow}>
+                <div className={styles.progressBar}>
+                  <div
+                    className={styles.progressFill}
+                    style={{ width: `${Math.min(100, course_progress_pct)}%` }}
+                  />
+                </div>
+                <span className={styles.progressLabel}>{course_progress_pct}%</span>
+              </div>
+
+              <nav className={styles.lessonNav}>
+                {prevLesson ? (
+                  <button type="button" className={styles.navBtn} onClick={() => goToLesson(prevLesson.id)}>
+                    <HiOutlineChevronLeft size={16} /> Previous
+                  </button>
+                ) : (
+                  <span />
+                )}
+                {nextLesson ? (
+                  <button type="button" className={`${styles.navBtn} ${styles.navBtnNext}`} onClick={() => goToLesson(nextLesson.id)}>
+                    Next <HiOutlineChevronRight size={16} />
+                  </button>
+                ) : (
+                  <span />
+                )}
+              </nav>
+            </div>
           </div>
 
-          <aside className={`${styles.sidebar} ${sidebarOpen ? styles.sidebarOpen : styles.sidebarClosed}`}>
-            <h2 className={styles.sidebarTitle}>Course Content</h2>
-            <div className={styles.sidebarCourse}>
-              <span className={styles.sidebarCourseName}>{course.title}</span>
+          {/* Sidebar */}
+          <aside className={`${styles.sidebar} ${sidebarOpen ? styles.sidebarOpen : ''}`}>
+            <div className={styles.sidebarHeader}>
+              <h2 className={styles.sidebarTitle}>Course Content</h2>
+              <button
+                type="button"
+                className={styles.sidebarClose}
+                onClick={() => setSidebarOpen(false)}
+              >
+                <HiOutlineXMark size={20} />
+              </button>
             </div>
             <p className={styles.sidebarStats}>
-              {completed_lessons}/{total_lessons} Done · {formatTotalDurationSeconds(total_duration_sec)}
+              {completed_lessons}/{total_lessons} lessons · {formatTotalDurationSeconds(total_duration_sec)}
             </p>
             <ul className={styles.lessonList}>
               {lessons.map((lesson) => {
@@ -423,32 +449,39 @@ export function PlayerPage() {
                   <li key={lesson.id}>
                     <button
                       type="button"
-                      className={`${styles.lessonItem} ${active ? styles.lessonItemActive : ''}`}
-                      onClick={() => goToLesson(lesson.id)}
+                      className={`${styles.lessonItem} ${active ? styles.lessonItemActive : ''} ${lesson.is_completed ? styles.lessonItemDone : ''}`}
+                      onClick={() => {
+                        goToLesson(lesson.id);
+                        setSidebarOpen(false);
+                      }}
                     >
                       <div className={styles.lessonItemTop}>
-                        <HiOutlinePlayCircle size={16} className={styles.lessonPlayIcon} />
+                        {lesson.is_completed ? (
+                          <HiOutlineCheckCircle size={16} className={styles.lessonCheckIcon} />
+                        ) : (
+                          <HiOutlinePlayCircle size={16} className={styles.lessonPlayIcon} />
+                        )}
                         <span className={styles.lessonItemTitle}>{lesson.title}</span>
                         {lesson.is_preview && <span className={styles.freeTag}>Preview</span>}
                       </div>
-                      <div className={styles.lessonItemMeta}>
+                      <div className={styles.lessonItemBottom}>
                         {lesson.duration_sec != null && (
-                          <span>{formatVideoTime(lesson.duration_sec)}</span>
+                          <span className={styles.lessonDuration}>{formatVideoTime(lesson.duration_sec)}</span>
                         )}
+                        <div className={styles.lessonMiniBar}>
+                          <div
+                            className={styles.lessonMiniFill}
+                            style={{ width: `${lesson.lesson_progress_pct}%` }}
+                          />
+                        </div>
                       </div>
-                      <div className={styles.lessonMiniBar}>
-                        <div
-                          className={styles.lessonMiniFill}
-                          style={{ width: `${lesson.lesson_progress_pct}%` }}
-                        />
-                      </div>
-                      <span className={styles.lessonPct}>{lesson.lesson_progress_pct}%</span>
                     </button>
                   </li>
                 );
               })}
             </ul>
           </aside>
+          {sidebarOpen && <div className={styles.sidebarBackdrop} onClick={() => setSidebarOpen(false)} />}
         </div>
       </div>
     </PageWrapper>
