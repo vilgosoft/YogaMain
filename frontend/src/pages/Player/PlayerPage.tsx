@@ -32,16 +32,6 @@ interface VideoAccess {
   player_kind?: 'html5' | 'drive_iframe';
 }
 
-/**
- * Extract Google Drive file ID from a preview/share URL,
- * then build a direct-stream URL that works with <video> tag.
- */
-function driveDirectUrl(previewUrl: string): string | null {
-  const m = previewUrl.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
-  if (!m) return null;
-  return `https://drive.google.com/uc?export=download&id=${m[1]}`;
-}
-
 export function PlayerPage() {
   const { courseId, videoId } = useParams<{ courseId: string; videoId: string }>();
   const navigate = useNavigate();
@@ -96,22 +86,8 @@ export function PlayerPage() {
       .get<ApiResponse<VideoAccess>>(`/videos/${currentVideoId}`)
       .then((res) => {
         const data = res.data.data!;
-        const kind = data.player_kind === 'drive_iframe' ? 'drive_iframe' : 'html5';
-
-        if (kind === 'drive_iframe') {
-          // Try direct URL for Drive videos so we can use Plyr instead of Drive's iframe
-          const direct = driveDirectUrl(data.video_url);
-          if (direct) {
-            setPlayerKind('html5'); // play through Plyr, not iframe
-            setVideoUrl(direct);
-          } else {
-            setPlayerKind('drive_iframe');
-            setVideoUrl(data.video_url);
-          }
-        } else {
-          setPlayerKind('html5');
-          setVideoUrl(normalizeUrl(data.video_url));
-        }
+        setPlayerKind(data.player_kind === 'drive_iframe' ? 'drive_iframe' : 'html5');
+        setVideoUrl(data.player_kind === 'drive_iframe' ? data.video_url : normalizeUrl(data.video_url));
       })
       .catch((err) => {
         if (err.response?.status === 403) setVideoError('You must be enrolled to watch this lesson.');
@@ -121,15 +97,12 @@ export function PlayerPage() {
       .finally(() => setLoadingVideo(false));
   }, [currentVideoId, normalizeUrl, navigate]);
 
-  // Initialize / destroy Plyr when video element or URL changes
+  // Initialize Plyr for HTML5 videos
   useEffect(() => {
-    if (!videoRef.current || !videoUrl || playerKind === 'drive_iframe') return;
+    if (!videoRef.current || !videoUrl || playerKind !== 'html5') return;
 
-    // Small delay to ensure DOM is ready
     const timer = setTimeout(() => {
       if (!videoRef.current) return;
-
-      // Destroy previous instance
       plyrRef.current?.destroy();
 
       plyrRef.current = new Plyr(videoRef.current, {
@@ -208,7 +181,7 @@ export function PlayerPage() {
 
   useEffect(() => () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current); }, []);
 
-  const markDriveLessonComplete = useCallback(async () => {
+  const markLessonComplete = useCallback(async () => {
     if (!currentVideoId) return;
     try {
       const { course_progress_pct } = await postVideoProgress(currentVideoId, { watched_sec: 0, mark_complete: true });
@@ -243,37 +216,21 @@ export function PlayerPage() {
       .get<ApiResponse<VideoAccess>>(`/videos/${currentVideoId}`)
       .then((res) => {
         const data = res.data.data!;
-        const kind = data.player_kind === 'drive_iframe' ? 'drive_iframe' : 'html5';
-        if (kind === 'drive_iframe') {
-          const direct = driveDirectUrl(data.video_url);
-          if (direct) {
-            setPlayerKind('html5');
-            setVideoUrl(direct);
-          } else {
-            setPlayerKind('drive_iframe');
-            setVideoUrl(data.video_url);
-          }
-        } else {
-          setPlayerKind('html5');
-          setVideoUrl(normalizeUrl(data.video_url));
-        }
+        setPlayerKind(data.player_kind === 'drive_iframe' ? 'drive_iframe' : 'html5');
+        setVideoUrl(data.player_kind === 'drive_iframe' ? data.video_url : normalizeUrl(data.video_url));
       })
       .catch(() => setVideoError('Failed to load video'))
       .finally(() => setLoadingVideo(false));
   };
 
-  /* ── Loading state ── */
+  /* ── Loading ── */
   if (loadingCurriculum) {
     return (
-      <PageWrapper>
-        <div className={styles.page}>
-          <div className={styles.loading}><Spinner /></div>
-        </div>
-      </PageWrapper>
+      <PageWrapper><div className={styles.page}><div className={styles.loading}><Spinner /></div></div></PageWrapper>
     );
   }
 
-  /* ── Error state ── */
+  /* ── Error ── */
   if (curriculumError || !curriculum) {
     return (
       <PageWrapper>
@@ -302,9 +259,7 @@ export function PlayerPage() {
             <HiOutlineChevronLeft size={16} /> Back
           </Link>
           <div className={styles.topRight}>
-            <span className={styles.topProgress}>
-              {completed_lessons}/{total_lessons} lessons
-            </span>
+            <span className={styles.topProgress}>{completed_lessons}/{total_lessons} lessons</span>
             <button type="button" className={styles.lessonsBtn} onClick={() => setSidebarOpen((o) => !o)}>
               {sidebarOpen ? <HiOutlineXMark size={18} /> : <HiOutlineBars3 size={18} />}
               <span>Lessons</span>
@@ -314,57 +269,51 @@ export function PlayerPage() {
 
         {/* Main content */}
         <div className={styles.content}>
-          {/* ── Video ── */}
-          <div className={styles.videoSection}>
-            {loadingVideo ? (
-              <div className={styles.videoPlaceholder}>
-                <Spinner />
-              </div>
-            ) : videoError ? (
-              <div className={styles.videoPlaceholder}>
-                <HiOutlineExclamationTriangle size={36} />
-                <p>{videoError}</p>
-                <button type="button" className={styles.retryBtn} onClick={retryLoadVideo}>Retry</button>
-              </div>
-            ) : videoUrl && !isDrive ? (
-              <div className={styles.plyrWrap}>
-                <video
-                  ref={videoRef}
-                  key={videoUrl}
-                  playsInline
-                  crossOrigin="anonymous"
-                  onPause={() => void flushProgress(false)}
-                  onEnded={() => void flushProgress(true)}
-                  onTimeUpdate={scheduleDebouncedSave}
-                  onError={() => setVideoError('Unable to play this video.')}
-                  onContextMenu={(e) => e.preventDefault()}
-                >
-                  <source src={videoUrl} />
-                </video>
-              </div>
-            ) : videoUrl && isDrive ? (
-              <div className={styles.driveWrap}>
-                <iframe
-                  key={videoUrl}
-                  src={videoUrl}
-                  className={styles.driveIframe}
-                  title={currentLesson?.title ?? 'Lesson'}
-                  allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
-                  allowFullScreen
-                />
-              </div>
-            ) : null}
-          </div>
+          {/* ── Video area ── */}
+          {loadingVideo ? (
+            <div className={styles.placeholder}><Spinner /></div>
+          ) : videoError ? (
+            <div className={styles.placeholder}>
+              <HiOutlineExclamationTriangle size={36} />
+              <p>{videoError}</p>
+              <button type="button" className={styles.retryBtn} onClick={retryLoadVideo}>Retry</button>
+            </div>
+          ) : videoUrl && !isDrive ? (
+            /* ── Plyr HTML5 player ── */
+            <div className={styles.plyrWrap}>
+              <video
+                ref={videoRef}
+                key={videoUrl}
+                playsInline
+                onPause={() => void flushProgress(false)}
+                onEnded={() => void flushProgress(true)}
+                onTimeUpdate={scheduleDebouncedSave}
+                onError={() => setVideoError('Unable to play this video.')}
+                onContextMenu={(e) => e.preventDefault()}
+              >
+                <source src={videoUrl} />
+              </video>
+            </div>
+          ) : videoUrl && isDrive ? (
+            /* ── Google Drive iframe ── */
+            <div className={styles.driveWrap}>
+              <iframe
+                key={videoUrl}
+                src={videoUrl}
+                title={currentLesson?.title ?? 'Lesson'}
+                allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+          ) : null}
 
-          {/* Drive mark complete (only for fallback iframe mode) */}
+          {/* Mark complete for Drive lessons */}
           {isDrive && videoUrl && !videoError && !loadingVideo && (
-            <div className={styles.driveFooter}>
+            <div className={styles.markRow}>
               {currentLesson?.is_completed ? (
-                <span className={styles.completedBadge}>
-                  <HiOutlineCheckCircle size={16} /> Completed
-                </span>
+                <span className={styles.doneBadge}><HiOutlineCheckCircle size={16} /> Completed</span>
               ) : (
-                <button type="button" className={styles.markCompleteBtn} onClick={() => void markDriveLessonComplete()}>
+                <button type="button" className={styles.markBtn} onClick={() => void markLessonComplete()}>
                   Mark lesson complete
                 </button>
               )}
@@ -372,12 +321,11 @@ export function PlayerPage() {
           )}
 
           {/* Lesson info */}
-          <div className={styles.lessonInfo}>
-            {course.category_name && <span className={styles.categoryPill}>{course.category_name}</span>}
-            <h1 className={styles.lessonTitle}>{currentLesson?.title ?? 'Lesson'}</h1>
-            {currentLesson?.description && <p className={styles.lessonDesc}>{currentLesson.description}</p>}
+          <div className={styles.info}>
+            {course.category_name && <span className={styles.pill}>{course.category_name}</span>}
+            <h1 className={styles.title}>{currentLesson?.title ?? 'Lesson'}</h1>
+            {currentLesson?.description && <p className={styles.desc}>{currentLesson.description}</p>}
 
-            {/* Progress */}
             <div className={styles.progressRow}>
               <div className={styles.progressTrack}>
                 <div className={styles.progressFill} style={{ width: `${course_progress_pct}%` }} />
@@ -385,23 +333,18 @@ export function PlayerPage() {
               <span className={styles.progressPct}>{course_progress_pct}%</span>
             </div>
 
-            {/* Prev / Next */}
-            <div className={styles.lessonNav}>
-              {prevLesson ? (
-                <button type="button" className={styles.navBtn} onClick={() => goToLesson(prevLesson.id)}>
-                  <HiOutlineChevronLeft size={16} /> Previous
-                </button>
-              ) : <span />}
-              {nextLesson ? (
-                <button type="button" className={styles.navBtn} onClick={() => goToLesson(nextLesson.id)}>
-                  Next <HiOutlineChevronRight size={16} />
-                </button>
-              ) : <span />}
+            <div className={styles.nav}>
+              {prevLesson
+                ? <button type="button" className={styles.navBtn} onClick={() => goToLesson(prevLesson.id)}><HiOutlineChevronLeft size={16} /> Previous</button>
+                : <span />}
+              {nextLesson
+                ? <button type="button" className={styles.navBtn} onClick={() => goToLesson(nextLesson.id)}>Next <HiOutlineChevronRight size={16} /></button>
+                : <span />}
             </div>
           </div>
         </div>
 
-        {/* Sidebar overlay */}
+        {/* Sidebar */}
         {sidebarOpen && <div className={styles.backdrop} onClick={() => setSidebarOpen(false)} />}
         <aside className={`${styles.sidebar} ${sidebarOpen ? styles.sidebarOpen : ''}`}>
           <div className={styles.sidebarHead}>
@@ -410,9 +353,7 @@ export function PlayerPage() {
               <HiOutlineXMark size={20} />
             </button>
           </div>
-          <p className={styles.sidebarStats}>
-            {completed_lessons}/{total_lessons} lessons · {formatTotalDurationSeconds(total_duration_sec)}
-          </p>
+          <p className={styles.sidebarStats}>{completed_lessons}/{total_lessons} lessons · {formatTotalDurationSeconds(total_duration_sec)}</p>
           <ul className={styles.lessonList}>
             {lessons.map((lesson) => (
               <li key={lesson.id}>
