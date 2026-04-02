@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo, useSyncExternalStore } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import client from '@/api/client';
 import type { ApiResponse } from '@/types/api.types';
@@ -35,6 +35,8 @@ interface VideoAccess {
   captions_url?: string | null;
   /** Drive /preview embed when the direct uc stream cannot play in the video element */
   drive_iframe_fallback_url?: string | null;
+  /** Full-page Drive viewer from API (preferred for mobile new-tab open) */
+  drive_open_url?: string | null;
 }
 
 /**
@@ -65,8 +67,86 @@ function extractDriveFileId(url: string): string | null {
   const m = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/i);
   if (m) return m[1];
   const m2 = url.match(/[?&]id=([a-zA-Z0-9_-]+)/i);
-  if (m2 && /drive\.google\.com/i.test(url)) return m2[1];
+  if (
+    m2 &&
+    /drive\.google\.com|drive\.usercontent\.google\.com|docs\.google\.com/i.test(url)
+  ) {
+    return m2[1];
+  }
   return null;
+}
+
+/** Opens Drive’s full-page viewer (not /preview embed) — best for mobile new-tab playback. */
+function buildDriveViewerTabUrl(videoUrl: string, previewOrFallback: string | null): string | null {
+  const candidates = [previewOrFallback, videoUrl].filter((u): u is string => Boolean(u?.trim()));
+  for (const u of candidates) {
+    const id = extractDriveFileId(u);
+    if (id) {
+      return `https://drive.google.com/file/d/${id}/view`;
+    }
+  }
+  const first = candidates[0];
+  if (first && /drive\.google\.com/i.test(first)) {
+    return first;
+  }
+  return null;
+}
+
+/** Turn …/file/d/ID/preview (and query strings) into …/view for opening in a new tab. */
+function coercePreviewToViewUrl(preview: string | null | undefined): string | null {
+  const u = preview?.trim();
+  if (!u || !/drive\.google\.com\/file\/d\/[^/]+\//i.test(u)) return null;
+  if (/\/view(\?|#|$)/i.test(u)) return u;
+  return u.replace(/\/preview(?=\?|#|$)/i, '/view');
+}
+
+/** Resolved tab URL: API open link, id extraction, then raw preview→view fallback. */
+function resolveDriveViewerTabUrl(
+  driveOpenUrl: string | null,
+  videoUrl: string | null,
+  driveEmbedPreview: string | null
+): string | null {
+  if (driveOpenUrl?.trim()) return driveOpenUrl.trim();
+  const built = buildDriveViewerTabUrl(videoUrl ?? '', driveEmbedPreview);
+  if (built) return built;
+  const coerced = coercePreviewToViewUrl(driveEmbedPreview) ?? coercePreviewToViewUrl(videoUrl);
+  if (coerced) return coerced;
+  const rawPrev = driveEmbedPreview?.trim();
+  if (rawPrev && /drive\.google\.com\/file\/d\//i.test(rawPrev)) return rawPrev;
+  const rawVid = videoUrl?.trim();
+  if (rawVid && /drive\.google\.com\/(file\/d\/|open\?)/i.test(rawVid)) return rawVid;
+  for (const raw of [driveOpenUrl, videoUrl, driveEmbedPreview]) {
+    const u = raw?.trim();
+    if (!u) continue;
+    if (!/drive\.google\.com|drive\.usercontent\.google\.com|docs\.google\.com/i.test(u)) continue;
+    const id = extractDriveFileId(u);
+    if (id) return `https://drive.google.com/file/d/${id}/view`;
+  }
+  return null;
+}
+
+/** Same breakpoint as the lesson drawer (max-width: 1023px). */
+const MOBILE_PLAYER_LAYOUT_MQ = '(max-width: 1023px)';
+
+function subscribeMobilePlayerLayout(cb: () => void) {
+  const mq = window.matchMedia(MOBILE_PLAYER_LAYOUT_MQ);
+  const handler = () => cb();
+  mq.addEventListener('change', handler);
+  window.addEventListener('resize', handler);
+  return () => {
+    mq.removeEventListener('change', handler);
+    window.removeEventListener('resize', handler);
+  };
+}
+
+function getMobilePlayerLayoutSnapshot() {
+  const mq = window.matchMedia(MOBILE_PLAYER_LAYOUT_MQ).matches;
+  // Some iOS / WebKit builds under-report matchMedia vs CSS; innerWidth is a reliable backstop.
+  return mq || (typeof window !== 'undefined' && window.innerWidth <= 1023);
+}
+
+function getMobilePlayerLayoutServerSnapshot() {
+  return false;
 }
 
 /** Try several direct URLs before falling back to Drive’s /preview iframe (avoids Drive’s share icon + stacked mobile UI). */
@@ -109,11 +189,16 @@ function stripDrivePreviewEmbeddedParam(url: string): string {
 }
 
 /** Mobile lesson drawer / sidebar */
-const MOBILE_LAYOUT_MQ = '(max-width: 1023px)';
+const MOBILE_LAYOUT_MQ = MOBILE_PLAYER_LAYOUT_MQ;
 
 export function PlayerPage() {
   const { courseId, videoId } = useParams<{ courseId: string; videoId: string }>();
   const navigate = useNavigate();
+  const isMobilePlayerLayout = useSyncExternalStore(
+    subscribeMobilePlayerLayout,
+    getMobilePlayerLayoutSnapshot,
+    getMobilePlayerLayoutServerSnapshot
+  );
   const videoRef = useRef<HTMLVideoElement>(null);
   const html5CandidatesRef = useRef<string[]>([]);
   const curriculumRef = useRef<PlayerCurriculumResponse | null>(null);
@@ -132,6 +217,8 @@ export function PlayerPage() {
   const [markCompleteError, setMarkCompleteError] = useState('');
   /** In-page Drive /preview when direct stream fails in the video element */
   const [driveEmbedPreview, setDriveEmbedPreview] = useState<string | null>(null);
+  /** Backend GoogleDriveVideo::toFileViewUrl — use on mobile instead of uc stream */
+  const [driveOpenUrl, setDriveOpenUrl] = useState<string | null>(null);
   const [useDriveEmbed, setUseDriveEmbed] = useState(false);
   /** Index into direct Drive stream URLs tried before iframe fallback */
   const [driveHtml5Attempt, setDriveHtml5Attempt] = useState(0);
@@ -189,6 +276,7 @@ export function PlayerPage() {
       setVideoUrl(null);
       setCaptionsUrl(null);
       setDriveEmbedPreview(null);
+      setDriveOpenUrl(null);
       setUseDriveEmbed(false);
       setDriveHtml5Attempt(0);
       setPlayerKind('html5');
@@ -200,6 +288,7 @@ export function PlayerPage() {
     setVideoUrl(null);
     setCaptionsUrl(null);
     setDriveEmbedPreview(null);
+    setDriveOpenUrl(null);
     setUseDriveEmbed(false);
     setDriveHtml5Attempt(0);
     setPlayerKind('html5');
@@ -217,6 +306,8 @@ export function PlayerPage() {
         const fb = data.drive_iframe_fallback_url?.trim();
         const normalizedFb = fb ? normalizeUrl(fb) : null;
         setDriveEmbedPreview(normalizedFb ?? (kind === 'drive_iframe' ? primary : null));
+        const open = data.drive_open_url?.trim();
+        setDriveOpenUrl(open ? normalizeUrl(open) : null);
       })
       .catch((err) => {
         if (err.response?.status === 403) {
@@ -368,9 +459,16 @@ export function PlayerPage() {
     setVideoError(msg);
   }, [useDriveEmbed, driveEmbedPreview, driveHtml5Attempt]);
 
+  const driveViewerTabUrl = useMemo(
+    () => resolveDriveViewerTabUrl(driveOpenUrl, videoUrl, driveEmbedPreview),
+    [driveOpenUrl, videoUrl, driveEmbedPreview]
+  );
+
   const activeHtml5Src = useMemo(() => {
     const locked = curriculum?.lessons.find((l) => l.id === currentVideoId)?.is_locked === true;
     if (locked || loadingVideo || useDriveEmbed || videoError) return null;
+    // Mobile: any lesson we can open in Drive’s full viewer — skip uc stream + iframe (iOS often can’t play uc).
+    if (isMobilePlayerLayout && driveViewerTabUrl) return null;
     if (!html5Candidates.length) return null;
     const i = Math.min(driveHtml5Attempt, html5Candidates.length - 1);
     return html5Candidates[i] ?? null;
@@ -382,6 +480,8 @@ export function PlayerPage() {
     videoError,
     html5Candidates,
     driveHtml5Attempt,
+    isMobilePlayerLayout,
+    driveViewerTabUrl,
   ]);
 
   curriculumRef.current = curriculum;
@@ -437,6 +537,12 @@ export function PlayerPage() {
     total_lessons > 0 ? Math.min(100, Math.round((completed_lessons / total_lessons) * 100)) : 0;
 
   const isCurrentLocked = currentLesson?.is_locked === true;
+
+  const showMobileDriveLaunch =
+    isMobilePlayerLayout &&
+    !isCurrentLocked &&
+    !loadingVideo &&
+    driveViewerTabUrl !== null;
 
   return (
     <PageWrapper variant="fluid">
@@ -497,7 +603,34 @@ export function PlayerPage() {
                   <div className={styles.videoLoading}>
                     <Spinner />
                   </div>
-                ) : useDriveEmbed && driveEmbedPreview ? (
+                ) : showMobileDriveLaunch && driveViewerTabUrl ? (
+                  <button
+                    type="button"
+                    className={styles.mobileDriveLaunch}
+                    onClick={() =>
+                      window.open(driveViewerTabUrl, '_blank', 'noopener,noreferrer')
+                    }
+                    aria-label={`Play “${currentLesson?.title ?? 'lesson'}” in Google Drive`}
+                  >
+                    <div className={styles.mobileDrivePoster}>
+                      {course.thumbnail_url ? (
+                        <img
+                          src={normalizeUrl(course.thumbnail_url)}
+                          alt=""
+                          className={styles.mobileDrivePosterImg}
+                          decoding="async"
+                        />
+                      ) : null}
+                      <div className={styles.mobileDrivePosterOverlay} aria-hidden />
+                      <span className={styles.mobileDrivePlayWrap}>
+                        <HiOutlinePlayCircle className={styles.mobileDrivePlayIcon} aria-hidden />
+                      </span>
+                    </div>
+                    <p className={styles.mobileDriveHint}>
+                      Tap to open in Google Drive — full-screen player, no download in the app
+                    </p>
+                  </button>
+                ) : useDriveEmbed && driveEmbedPreview && !isMobilePlayerLayout ? (
                   <div className={styles.driveEmbedOuter}>
                     <div className={styles.driveEmbedShell}>
                       <iframe
@@ -556,6 +689,7 @@ export function PlayerPage() {
                         setVideoUrl(null);
                         setCaptionsUrl(null);
                         setDriveEmbedPreview(null);
+                        setDriveOpenUrl(null);
                         setLoadingVideo(true);
                         client
                           .get<ApiResponse<VideoAccess>>(`/videos/${currentVideoId}`)
@@ -570,6 +704,8 @@ export function PlayerPage() {
                             const fb = data.drive_iframe_fallback_url?.trim();
                             const normalizedFb = fb ? normalizeUrl(fb) : null;
                             setDriveEmbedPreview(normalizedFb ?? (kind === 'drive_iframe' ? primary : null));
+                            const open = data.drive_open_url?.trim();
+                            setDriveOpenUrl(open ? normalizeUrl(open) : null);
                           })
                           .catch(() => setVideoError('Failed to load video'))
                           .finally(() => setLoadingVideo(false));

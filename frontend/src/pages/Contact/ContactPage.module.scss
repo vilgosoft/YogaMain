@@ -1,0 +1,142 @@
+.doc {
+  max-width: 52rem;
+  margin: 0 auto;
+}
+
+.hero {
+  margin-bottom: $space-10;
+  padding-bottom: $space-8;
+  border-bottom: 1px solid $color-border;
+  text-align: center;
+
+  @media (min-width: $bp-md) {
+    text-align: left;
+  }
+}
+
+.accent {
+  display: block;
+  width: 3rem;
+  height: 3px;
+  border-radius: $radius-full;
+  background: $gradient-primary;
+  margin: 0 auto $space-4;
+
+  @media (min-width: $bp-md) {
+    margin-left: 0;
+    margin-right: 0;
+  }
+}
+
+.title {
+  font-family: $font-heading;
+  font-size: clamp($font-size-2xl, 4vw, $font-size-3xl);
+  font-weight: $font-weight-bold;
+  color: $color-text;
+  line-height: $line-height-tight;
+  margin: 0 0 $space-3;
+}
+
+.subtitle {
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+  margin: 0;
+  line-height: $line-height-relaxed;
+  max-width: 36rem;
+
+  @media (min-width: $bp-md) {
+    margin-left: 0;
+    margin-right: auto;
+  }
+
+  @media (max-width: #{$bp-md - 1px}) {
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+.grid {
+  display: grid;
+  gap: $space-5;
+
+  @media (min-width: $bp-md) {
+    grid-template-columns: repeat(3, 1fr);
+    align-items: stretch;
+  }
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+  padding: $space-6;
+  border-radius: $radius-lg;
+  border: 1px solid $color-border;
+  background: $color-surface;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+  &:hover {
+    border-color: rgba($color-primary, 0.35);
+    box-shadow: 0 8px 24px rgb(15 23 42 / 0.06);
+  }
+}
+
+.cardIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: $radius-md;
+  background: linear-gradient(135deg, rgba($color-primary, 0.12), rgba($color-secondary, 0.08));
+  color: $color-primary;
+
+  svg {
+    width: 1.35rem;
+    height: 1.35rem;
+  }
+}
+
+.cardLabel {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: $color-text-muted;
+  margin: 0;
+}
+
+.cardValue {
+  font-size: $font-size-base;
+  font-weight: $font-weight-medium;
+  color: $color-text;
+  line-height: 1.55;
+  margin: 0;
+  text-decoration: none;
+}
+
+a.cardValue {
+  color: $color-primary;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.addressLines {
+  font-style: normal;
+  white-space: pre-line;
+}
+
+.note {
+  margin-top: $space-10;
+  padding: $space-5 $space-6;
+  border-radius: $radius-lg;
+  border: 1px solid rgba($color-primary, 0.2);
+  background: linear-gradient(135deg, rgba($color-primary, 0.05), rgba($color-secondary, 0.03));
+  font-size: $font-size-sm;
+  line-height: 1.65;
+  color: $color-text-secondary;
+  text-align: center;
+}

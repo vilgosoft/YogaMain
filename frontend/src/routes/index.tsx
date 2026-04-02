@@ -22,6 +22,8 @@ import { TransactionsPage } from '@/pages/Admin/TransactionsPage';
 import { PlayerPage } from '@/pages/Player/PlayerPage';
 import { PrivacyPolicyPage } from '@/pages/Legal/PrivacyPolicyPage';
 import { TermsPage } from '@/pages/Legal/TermsPage';
+import { ShippingRefundPolicyPage } from '@/pages/Legal/ShippingRefundPolicyPage';
+import { ContactPage } from '@/pages/Contact/ContactPage';
 
 export function AppRoutes() {
   return (
@@ -30,6 +32,8 @@ export function AppRoutes() {
       <Route path={ROUTES.HOME} element={<HomePage />} />
       <Route path={ROUTES.PRIVACY_POLICY} element={<PrivacyPolicyPage />} />
       <Route path={ROUTES.TERMS} element={<TermsPage />} />
+      <Route path={ROUTES.SHIPPING_REFUND_POLICY} element={<ShippingRefundPolicyPage />} />
+      <Route path={ROUTES.CONTACT} element={<ContactPage />} />
       <Route path={ROUTES.LOGIN} element={<LoginPage />} />
       <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
       <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPasswordPage />} />

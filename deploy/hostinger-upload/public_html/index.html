@@ -2,8 +2,9 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="apple-touch-icon" href="/favicon.svg" />
+    <link rel="icon" type="image/png" href="/favicon.png" sizes="32x32" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="preload" as="image" href="/brand/sai-ishani-logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <!-- Single CSP after .htaccess clears host defaults. frame-src must include Drive + accounts (cookie refresh inside embed). -->
     <meta
@@ -26,10 +27,87 @@
         }
       })();
     </script>
-    <script type="module" crossorigin src="/assets/index-CZaWvr3B.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-c6RNDtI5.css">
+    <style>
+      #app-initial-loader {
+        position: fixed;
+        inset: 0;
+        z-index: 2147483646;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2rem;
+        background: #fafafa;
+      }
+      html[data-theme='dark'] #app-initial-loader {
+        background: #0f172a;
+      }
+      #app-initial-loader img {
+        display: block;
+        max-width: min(300px, 78vw);
+        width: auto;
+        height: auto;
+        object-fit: contain;
+        animation: yog-loader-breathe 2.4s ease-in-out infinite;
+      }
+      @keyframes yog-loader-breathe {
+        0%,
+        100% {
+          transform: scale(1);
+          opacity: 1;
+        }
+        50% {
+          transform: scale(0.97);
+          opacity: 0.9;
+        }
+      }
+      .initial-loader__rings {
+        position: relative;
+        width: 52px;
+        height: 52px;
+      }
+      .initial-loader__rings span {
+        position: absolute;
+        inset: 0;
+        border: 2px solid rgba(219, 39, 119, 0.4);
+        border-radius: 50%;
+        animation: yog-loader-ring 1.6s ease-out infinite;
+      }
+      html[data-theme='dark'] .initial-loader__rings span {
+        border-color: rgba(244, 114, 182, 0.45);
+      }
+      .initial-loader__rings span:nth-child(2) {
+        animation-delay: 0.55s;
+      }
+      @keyframes yog-loader-ring {
+        0% {
+          transform: scale(0.55);
+          opacity: 0.95;
+        }
+        100% {
+          transform: scale(1.75);
+          opacity: 0;
+        }
+      }
+    </style>
+    <script type="module" crossorigin src="/assets/index-DtFbUyKF.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-Bh-Wt8WD.css">
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div id="app-initial-loader" aria-busy="true" aria-live="polite">
+        <img
+          src="/brand/sai-ishani-logo.png"
+          alt=""
+          width="500"
+          height="140"
+          decoding="async"
+          fetchpriority="high"
+        />
+        <div class="initial-loader__rings" aria-hidden="true">
+          <span></span><span></span>
+        </div>
+      </div>
+    </div>
   </body>
 </html>

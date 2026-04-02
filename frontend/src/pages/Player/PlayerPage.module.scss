@@ -418,6 +418,79 @@
   }
 }
 
+/* Mobile: tap opens Drive /view in new tab — no iframe, no in-app HTML5 stream */
+.mobileDriveLaunch {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: $space-3;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  border-radius: inherit;
+  -webkit-tap-highlight-color: transparent;
+
+  &:focus-visible {
+    outline: 2px solid $color-primary;
+    outline-offset: 2px;
+  }
+}
+
+.mobileDrivePoster {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: $radius-xl;
+  overflow: hidden;
+  background: linear-gradient(145deg, #1a1035, #0a0a12);
+  border: 1px solid $color-border;
+  box-shadow: $shadow-lg;
+}
+
+.mobileDrivePosterImg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mobileDrivePosterOverlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgb(0 0 0 / 0.65), rgb(0 0 0 / 0.2));
+  pointer-events: none;
+}
+
+.mobileDrivePlayWrap {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.mobileDrivePlayIcon {
+  width: clamp(4rem, 18vw, 5.5rem);
+  height: clamp(4rem, 18vw, 5.5rem);
+  color: #fff;
+  filter: drop-shadow(0 4px 24px rgb(0 0 0 / 0.5));
+}
+
+.mobileDriveHint {
+  margin: 0;
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+  line-height: 1.45;
+  padding: 0 $space-1;
+}
+
 .driveEmbedOuter {
   position: absolute;
   inset: 0;

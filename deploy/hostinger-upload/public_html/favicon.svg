@@ -1,18 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="SAI ISHANI">
-  <defs>
-    <linearGradient id="petal" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#7c3aed"/>
-      <stop offset="55%" stop-color="#a855f7"/>
-      <stop offset="100%" stop-color="#ec4899"/>
-    </linearGradient>
-  </defs>
-  <rect width="32" height="32" rx="8" fill="#0f172a"/>
-  <g fill="url(#petal)" transform="translate(16 17)">
-    <ellipse cx="0" cy="-6" rx="3.2" ry="8" transform="rotate(0)"/>
-    <ellipse cx="0" cy="-6" rx="3.2" ry="8" transform="rotate(72)"/>
-    <ellipse cx="0" cy="-6" rx="3.2" ry="8" transform="rotate(144)"/>
-    <ellipse cx="0" cy="-6" rx="3.2" ry="8" transform="rotate(-144)"/>
-    <ellipse cx="0" cy="-6" rx="3.2" ry="8" transform="rotate(-72)"/>
+<!-- Simplified mark: pink lotus + slate silhouette (fallback; primary tab icon is favicon.png). -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="SAI ISHANI YOGASHALA">
+  <rect width="32" height="32" rx="6" fill="#fafafa"/>
+  <g fill="#ec4899" opacity="0.92" transform="translate(16 14)">
+    <ellipse cx="0" cy="-5" rx="2.8" ry="7" transform="rotate(0)"/>
+    <ellipse cx="0" cy="-5" rx="2.8" ry="7" transform="rotate(51)"/>
+    <ellipse cx="0" cy="-5" rx="2.8" ry="7" transform="rotate(102)"/>
+    <ellipse cx="0" cy="-5" rx="2.8" ry="7" transform="rotate(-102)"/>
+    <ellipse cx="0" cy="-5" rx="2.8" ry="7" transform="rotate(-51)"/>
   </g>
-  <circle cx="16" cy="17" r="2.2" fill="#fde68a" opacity="0.95"/>
+  <ellipse cx="16" cy="15.5" rx="2.2" ry="3.8" fill="#64748b"/>
+  <ellipse cx="16" cy="12.2" rx="1.6" ry="1.5" fill="#64748b"/>
 </svg>

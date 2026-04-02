@@ -5,6 +5,7 @@ import { AntConfigProvider } from '@/components/AntConfigProvider';
 import { ToastProvider } from '@/components/ui/Toast/Toast';
 import { Navbar } from '@/components/layout/Navbar/Navbar';
 import { Footer } from '@/components/layout/Footer/Footer';
+import { ScrollToTop } from '@/components/layout/ScrollToTop/ScrollToTop';
 import { MobileBottomNav } from '@/components/layout/MobileBottomNav/MobileBottomNav';
 import { AppRoutes } from '@/routes';
 
@@ -19,6 +20,7 @@ function AppShell() {
 
   return (
     <>
+      <ScrollToTop />
       <Navbar />
       <AppRoutes />
       <MobileBottomNav />

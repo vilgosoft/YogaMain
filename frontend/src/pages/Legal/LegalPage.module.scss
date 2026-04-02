@@ -81,6 +81,16 @@
     font-weight: $font-weight-semibold;
     color: $color-text;
   }
+
+  a {
+    color: $color-primary;
+    font-weight: $font-weight-medium;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
 }
 
 .termsList {
