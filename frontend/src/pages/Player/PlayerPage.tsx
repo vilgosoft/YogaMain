@@ -23,6 +23,7 @@ import {
   HiOutlineBars3,
   HiOutlineXMark,
   HiOutlineCheckCircle,
+  HiPlayCircle,
 } from 'react-icons/hi2';
 import styles from './PlayerPage.module.scss';
 
@@ -30,6 +31,24 @@ interface VideoAccess {
   video_url: string;
   title: string;
   player_kind?: 'html5' | 'drive_iframe';
+}
+
+/** Extract Drive file ID from any drive URL */
+function extractDriveId(url: string): string | null {
+  const m = url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
+  return m ? m[1] : null;
+}
+
+/** Build a Drive thumbnail URL */
+function driveThumbnailUrl(driveUrl: string): string | null {
+  const id = extractDriveId(driveUrl);
+  return id ? `https://drive.google.com/thumbnail?id=${id}&sz=w800` : null;
+}
+
+/** Build a Drive view URL (opens in Drive's viewer — no download) */
+function driveViewUrl(driveUrl: string): string | null {
+  const id = extractDriveId(driveUrl);
+  return id ? `https://drive.google.com/file/d/${id}/preview` : null;
 }
 
 export function PlayerPage() {
@@ -125,7 +144,6 @@ export function PlayerPage() {
         invertTime: false,
       });
 
-      // Resume from last position
       plyrRef.current.on('loadedmetadata', () => {
         const lesson = curriculum?.lessons.find((l) => l.id === currentVideoId);
         if (lesson && !lesson.is_completed && lesson.watched_sec > 0 && plyrRef.current) {
@@ -223,6 +241,13 @@ export function PlayerPage() {
       .finally(() => setLoadingVideo(false));
   };
 
+  /** Open Drive video in new tab (their native viewer, no download) */
+  const openDriveVideo = () => {
+    if (!videoUrl) return;
+    const viewUrl = driveViewUrl(videoUrl) ?? videoUrl;
+    window.open(viewUrl, '_blank', 'noopener,noreferrer');
+  };
+
   /* ── Loading ── */
   if (loadingCurriculum) {
     return (
@@ -249,6 +274,11 @@ export function PlayerPage() {
 
   const { course, lessons, completed_lessons, total_lessons, course_progress_pct, total_duration_sec } = curriculum;
   const isDrive = playerKind === 'drive_iframe';
+
+  // For Drive: get thumbnail from Drive or fall back to course thumbnail
+  const driveThumbnail = isDrive && videoUrl
+    ? (driveThumbnailUrl(videoUrl) ?? course.thumbnail_url ?? null)
+    : null;
 
   return (
     <PageWrapper>
@@ -295,16 +325,24 @@ export function PlayerPage() {
               </video>
             </div>
           ) : videoUrl && isDrive ? (
-            /* ── Google Drive iframe ── */
-            <div className={styles.driveWrap}>
-              <iframe
-                key={videoUrl}
-                src={videoUrl}
-                title={currentLesson?.title ?? 'Lesson'}
-                allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
-                allowFullScreen
-              />
-            </div>
+            /* ── Google Drive: thumbnail + play button ── */
+            <button type="button" className={styles.driveThumbnail} onClick={openDriveVideo}>
+              {driveThumbnail ? (
+                <img
+                  src={driveThumbnail}
+                  alt={currentLesson?.title ?? 'Video thumbnail'}
+                  className={styles.thumbImg}
+                  onError={(e) => {
+                    // If Drive thumbnail fails, hide the image
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
+                />
+              ) : null}
+              <div className={styles.playOverlay}>
+                <HiPlayCircle className={styles.playIcon} />
+                <span className={styles.playLabel}>Tap to play video</span>
+              </div>
+            </button>
           ) : null}
 
           {/* Mark complete for Drive lessons */}

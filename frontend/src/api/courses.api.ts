@@ -94,6 +94,7 @@ export interface PlayerCurriculumResponse {
     slug: string;
     category_name: string | null;
     short_desc: string | null;
+    thumbnail_url: string | null;
   };
   lessons: PlayerLesson[];
   completed_lessons: number;

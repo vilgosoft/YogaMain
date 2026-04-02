@@ -262,6 +262,7 @@ class CourseController
                 'slug'          => $course['slug'],
                 'category_name' => $course['category_name'] ?? null,
                 'short_desc'    => $course['short_desc'] ?? null,
+                'thumbnail_url' => $course['thumbnail_url'] ?? null,
             ],
             'lessons'             => $lessons,
             'completed_lessons'   => $completedLessons,
