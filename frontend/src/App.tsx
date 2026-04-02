@@ -1,6 +1,7 @@
 import { BrowserRouter, useLocation } from 'react-router-dom';
 import { AuthProvider } from '@/context/AuthContext';
 import { ThemeProvider } from '@/context/ThemeContext';
+import { AntConfigProvider } from '@/components/AntConfigProvider';
 import { ToastProvider } from '@/components/ui/Toast/Toast';
 import { Navbar } from '@/components/layout/Navbar/Navbar';
 import { Footer } from '@/components/layout/Footer/Footer';
@@ -9,7 +10,12 @@ import { AppRoutes } from '@/routes';
 
 function AppShell() {
   const { pathname } = useLocation();
-  const showFooter = pathname === '/';
+  const hideFooter =
+    pathname.startsWith('/admin') ||
+    pathname.startsWith('/player') ||
+    pathname.startsWith('/my-learning') ||
+    pathname === '/payments/callback';
+  const showFooter = !hideFooter;
 
   return (
     <>
@@ -25,11 +31,13 @@ export default function App() {
   return (
     <BrowserRouter>
       <ThemeProvider>
-        <AuthProvider>
-          <ToastProvider>
-            <AppShell />
-          </ToastProvider>
-        </AuthProvider>
+        <AntConfigProvider>
+          <AuthProvider>
+            <ToastProvider>
+              <AppShell />
+            </ToastProvider>
+          </AuthProvider>
+        </AntConfigProvider>
       </ThemeProvider>
     </BrowserRouter>
   );

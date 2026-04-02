@@ -1,0 +1,219 @@
+.actionCell {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+  flex-wrap: wrap;
+}
+
+.iconDelete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: $radius-md;
+  border: 1px solid rgba($color-error, 0.45);
+  background: transparent;
+  color: $color-error;
+  cursor: pointer;
+  transition:
+    background $transition-fast,
+    border-color $transition-fast;
+
+  &:hover:not(:disabled) {
+    background: rgba($color-error, 0.12);
+    border-color: $color-error;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+.deleteWarning {
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+  margin: 0 0 $space-5;
+  line-height: 1.5;
+}
+
+.deleteUserName {
+  font-weight: $font-weight-semibold;
+  color: $color-text;
+}
+
+.dangerBtn {
+  border-color: rgba($color-error, 0.55) !important;
+  color: $color-error !important;
+
+  &:hover:not(:disabled) {
+    background: rgba($color-error, 0.12) !important;
+    border-color: $color-error !important;
+  }
+}
+
+.courseCell {
+  min-width: 140px;
+  max-width: 280px;
+}
+
+.noCourses {
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+}
+
+.courseCount {
+  display: block;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  color: $color-text-muted;
+  margin-bottom: $space-1;
+}
+
+.chipWrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-1;
+  max-height: 120px;
+  overflow-y: auto;
+  @include scrollbar-dark;
+}
+
+.courseChip {
+  display: inline-block;
+  max-width: 100%;
+  padding: $space-1 $space-2;
+  border-radius: $radius-full;
+  font-size: $font-size-xs;
+  background: rgba($color-primary, 0.1);
+  color: $color-text;
+  border: 1px solid rgba($color-primary, 0.2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sectionTitle {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text;
+  margin: 0 0 $space-3;
+
+  &:not(:first-child) {
+    margin-top: $space-6;
+  }
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $space-4;
+  margin-bottom: $space-2;
+
+  @media (max-width: $bp-sm) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+}
+
+.fieldLabel {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text;
+}
+
+.roleSelect {
+  width: 100%;
+  padding: $space-2 $space-3;
+  border-radius: $radius-md;
+  border: 1px solid $color-border;
+  background: $color-surface;
+  color: $color-text;
+  font-size: $font-size-sm;
+  min-height: 42px;
+
+  &:focus {
+    outline: none;
+    border-color: $color-primary;
+    box-shadow: 0 0 0 2px rgba($color-primary, 0.2);
+  }
+}
+
+.enrollmentHint {
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+  margin-bottom: $space-4;
+  line-height: 1.45;
+}
+
+.enrollmentList {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+  max-height: min(360px, 50vh);
+  overflow-y: auto;
+  margin-bottom: $space-5;
+  padding-right: $space-1;
+}
+
+.enrollmentRow {
+  display: flex;
+  align-items: flex-start;
+  gap: $space-3;
+  padding: $space-2 $space-3;
+  border-radius: $radius-md;
+  border: 1px solid $color-border;
+  cursor: pointer;
+  transition: background $transition-fast, border-color $transition-fast;
+
+  &:hover {
+    background: $color-surface-hover;
+    border-color: rgba($color-primary, 0.35);
+  }
+
+  input {
+    margin-top: 3px;
+    accent-color: $color-primary;
+  }
+}
+
+.enrollmentRowBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.enrollmentTitle {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text;
+}
+
+.enrollmentMeta {
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+  margin-top: 2px;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: $space-3;
+}
+
+.optionsLoading {
+  display: flex;
+  justify-content: center;
+  padding: $space-8;
+}

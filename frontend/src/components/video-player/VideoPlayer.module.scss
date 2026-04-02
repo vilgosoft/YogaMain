@@ -1,0 +1,108 @@
+.wrapper {
+  width: 100%;
+  max-width: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.antCard {
+  background: transparent !important;
+  box-shadow: none !important;
+
+  :global(.ant-card-body) {
+    border-radius: inherit;
+  }
+}
+
+/* Responsive native <video>: desktop = aspect box + absolute fill; mobile = in-flow for control strip */
+.root {
+  position: relative;
+  width: 100%;
+  background: #000;
+  border-radius: inherit;
+  overflow: hidden;
+}
+
+.stage {
+  position: relative;
+  width: 100%;
+  background: #000;
+  border-radius: inherit;
+  overflow: hidden;
+
+  @include respond(lg) {
+    aspect-ratio: 16 / 9;
+    max-height: min(85dvh, 960px);
+  }
+}
+
+.video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: #000;
+  object-fit: contain;
+  object-position: center center;
+
+  @include respond(lg) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+  }
+}
+
+@media (max-width: ($bp-lg - 1px)) {
+  /*
+   * Mobile WebKit: border/box-shadow on <video> + extra wrappers can composite a second
+   * layer of shadow-DOM controls (double play, timeline drawn over the picture).
+   * Keep chrome on .stage only; leave the video element visually flat.
+   */
+  .root {
+    overflow: visible;
+    border-radius: 0;
+  }
+
+  .stage {
+    overflow: visible;
+    border-radius: $radius-md;
+    aspect-ratio: unset;
+    max-height: none;
+    border: 1px solid $color-border;
+    box-shadow: $shadow-lg;
+    background: #000;
+  }
+
+  .video {
+    position: relative;
+    inset: auto;
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    max-height: min(70dvh, calc(100dvh - 10rem));
+    object-fit: contain;
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
+    outline: none;
+    overflow: visible;
+    vertical-align: top;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  /*
+   * Native <video> on iOS: large center “hover” play + bottom bar play = two icons.
+   * Hiding the overlay button leaves the standard inline controls (tap video / bottom bar).
+   */
+  .video::-webkit-media-controls-overlay-play-button {
+    display: none;
+  }
+}
+
+@media (max-width: ($bp-lg - 1px)) and (orientation: landscape) {
+  .video {
+    max-height: min(82dvh, calc(100dvh - 4.5rem));
+  }
+}

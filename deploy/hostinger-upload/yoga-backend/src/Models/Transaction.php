@@ -62,4 +62,12 @@ class Transaction
             ],
         ];
     }
+
+    public function deleteById(int $id): bool
+    {
+        $stmt = $this->db->prepare('DELETE FROM transactions WHERE id = :id');
+        $stmt->execute(['id' => $id]);
+
+        return $stmt->rowCount() > 0;
+    }
 }

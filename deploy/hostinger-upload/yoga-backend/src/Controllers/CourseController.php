@@ -173,7 +173,7 @@ class CourseController
                     $ordered = $this->videoModel->getByCourseId((int) $video['course_id']);
                     if (!$this->userHasUnlockedVideoInSequence($authUser['id'], $video, $ordered)) {
                         Response::error(
-                            'Complete the previous lesson at 100% before opening this one.',
+                            'Mark the previous lesson as complete before opening this one.',
                             'LESSON_LOCKED',
                             403
                         );
@@ -198,7 +198,7 @@ class CourseController
         $ordered = $this->videoModel->getByCourseId((int) $video['course_id']);
         if (!$this->userHasUnlockedVideoInSequence($authUser['id'], $video, $ordered)) {
             Response::error(
-                'Complete the previous lesson at 100% before opening this one.',
+                'Mark the previous lesson as complete before opening this one.',
                 'LESSON_LOCKED',
                 403
             );
@@ -359,17 +359,10 @@ class CourseController
                 $completedLessons++;
             }
 
-            $lessonPct = 0;
-            if ($done) {
-                $lessonPct = 100;
-            } elseif ($dur > 0) {
-                $lessonPct = min(100, (int) round(($watched / $dur) * 100));
-            } elseif ($watched > 0) {
-                $lessonPct = 5;
-            }
+            $lessonPct = $done ? 100 : 0;
 
             $isLocked = !$prevComplete;
-            $prevComplete = $lessonPct >= 100;
+            $prevComplete = $done;
 
             $lessons[] = [
                 'id'                  => $vid,
@@ -435,7 +428,7 @@ class CourseController
         $ordered = $this->videoModel->getByCourseId($courseId);
         if (!$this->userHasUnlockedVideoInSequence($userId, $video, $ordered)) {
             Response::error(
-                'This lesson is locked until the previous one is completed to 100%.',
+                'This lesson is locked until the previous one is marked complete.',
                 'LESSON_LOCKED',
                 403
             );
@@ -520,36 +513,11 @@ class CourseController
             }
             $prev    = $orderedVideos[$i - 1];
             $prevRow = $vp->getForUserVideo($userId, (int) $prev['id']);
-            $prevPct = $this->computeLessonProgressPct($prev, $prevRow);
 
-            return $prevPct >= 100;
+            return $prevRow !== null && (int) $prevRow['is_completed'] === 1;
         }
 
         return false;
-    }
-
-    /**
-     * @param array<string, mixed> $video
-     * @param array{watched_sec: int, is_completed: int}|null $row
-     */
-    private function computeLessonProgressPct(array $video, ?array $row): int
-    {
-        if ($row === null) {
-            return 0;
-        }
-        if ((int) $row['is_completed'] === 1) {
-            return 100;
-        }
-        $dur = $video['duration_sec'] !== null ? (int) $video['duration_sec'] : 0;
-        $watched = (int) $row['watched_sec'];
-        if ($dur > 0) {
-            return min(100, (int) round(($watched / $dur) * 100));
-        }
-        if ($watched > 0) {
-            return 5;
-        }
-
-        return 0;
     }
 
     private function resolveAdminNotificationEmail(): string

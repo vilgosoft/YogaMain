@@ -30,6 +30,11 @@ export function Footer() {
             <Link to={ROUTES.REGISTER}>Get Started</Link>
           </div>
           <div className={styles.column}>
+            <h4 className={styles.columnTitle}>Legal</h4>
+            <Link to={ROUTES.PRIVACY_POLICY}>Privacy Policy</Link>
+            <Link to={ROUTES.TERMS}>Terms &amp; Conditions</Link>
+          </div>
+          <div className={styles.column}>
             <h4 className={styles.columnTitle}>Support</h4>
             <Link to="#">Help Center</Link>
             <Link to="#">Contact Us</Link>

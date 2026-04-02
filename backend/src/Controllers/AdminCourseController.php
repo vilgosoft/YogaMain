@@ -33,6 +33,22 @@ class AdminCourseController
         Response::json($result['courses'], '', 200, $result['meta']);
     }
 
+    /** Compact list for assigning course access to users. */
+    public function enrollmentOptions(): void
+    {
+        try {
+            Response::json($this->model->listForEnrollmentAdmin());
+        } catch (\Throwable $e) {
+            error_log('enrollmentOptions: ' . $e->getMessage());
+            $isDev = ($_ENV['APP_ENV'] ?? 'production') === 'development';
+            Response::error(
+                $isDev ? $e->getMessage() : 'Could not load course list',
+                'SERVER_ERROR',
+                500
+            );
+        }
+    }
+
     public function create(): void
     {
         $data = $this->trimPostStrings($_POST);

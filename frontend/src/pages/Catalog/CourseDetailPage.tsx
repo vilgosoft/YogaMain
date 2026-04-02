@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { getCourseBySlug, type CourseDetailResponse } from '@/api/courses.api';
-import { initiatePayment } from '@/api/payments.api';
+import { initiatePayment, verifyPayment } from '@/api/payments.api';
+import { loadRazorpayScript, openRazorpayCheckout } from '@/utils/razorpayCheckout';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/components/ui/Toast/Toast';
 import { Button } from '@/components/ui/Button/Button';
@@ -14,7 +15,7 @@ import {
   getPlanByCode,
   type PlanCode,
 } from '@/utils/pricingPlans';
-import { ROUTES } from '@/utils/constants';
+import { ROUTES, SITE_LEGAL } from '@/utils/constants';
 import { getApiErrorMessage } from '@/utils/apiErrors';
 import {
   HiOutlineClock,
@@ -26,9 +27,23 @@ import {
 } from 'react-icons/hi2';
 import styles from './CourseDetailPage.module.scss';
 
+const PENDING_ENROLL_KEY = (slug: string) => `yogaPendingEnroll:${slug}`;
+
+function isPlanCode(value: unknown): value is PlanCode {
+  return value === '1y_no_diet' || value === '1y_diet';
+}
+
+/** MySQL/JSON may send 0/1 or "0"/"1"; only explicit free flags skip paid checkout. */
+function isCatalogCourseFree(isFree: unknown): boolean {
+  if (isFree === true || isFree === 1) return true;
+  if (isFree === '1') return true;
+  return false;
+}
+
 export function CourseDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { isAuthenticated, user } = useAuth();
   const { showToast } = useToast();
 
@@ -36,9 +51,26 @@ export function CourseDetailPage() {
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState(false);
   const [selectedPlanCode, setSelectedPlanCode] = useState<PlanCode>(DEFAULT_PLAN_CODE);
+  /** Blocks double-clicks before React re-renders with isLoading/disabled. */
+  const buyInFlightRef = useRef(false);
 
   useEffect(() => {
     setSelectedPlanCode(DEFAULT_PLAN_CODE);
+  }, [slug]);
+
+  /** Restore plan chosen before “Login to Enroll” (session survives auth redirect). */
+  useEffect(() => {
+    if (!slug) return;
+    const raw = sessionStorage.getItem(PENDING_ENROLL_KEY(slug));
+    if (!raw) return;
+    try {
+      const planCode = JSON.parse(raw)?.planCode;
+      if (isPlanCode(planCode)) {
+        setSelectedPlanCode(planCode);
+      }
+    } catch {
+      /* ignore */
+    }
   }, [slug]);
 
   useEffect(() => {
@@ -54,25 +86,95 @@ export function CourseDetailPage() {
   }, [slug, isAuthenticated, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleBuy = async () => {
-    if (!data) return;
+    if (!data || !slug) return;
 
     if (!isAuthenticated) {
-      navigate(ROUTES.LOGIN);
+      try {
+        sessionStorage.setItem(
+          PENDING_ENROLL_KEY(slug),
+          JSON.stringify({ planCode: selectedPlanCode })
+        );
+      } catch {
+        /* ignore quota / private mode */
+      }
+      const returnPath =
+        location.pathname + (location.search && location.search.length > 0 ? location.search : '');
+      navigate(ROUTES.LOGIN, { state: { from: { pathname: returnPath } } });
       return;
     }
 
+    if (buyInFlightRef.current) return;
+    buyInFlightRef.current = true;
     setPurchasing(true);
+    let checkoutModalOpened = false;
     try {
+      const catalogFree = isCatalogCourseFree(data.course.is_free);
       const result = await initiatePayment(
         data.course.id,
-        data.course.is_free ? undefined : selectedPlanCode
+        catalogFree ? undefined : selectedPlanCode
       );
 
-      if (data.course.is_free) {
+      if (catalogFree || result.status === 'enrolled') {
+        try {
+          sessionStorage.removeItem(PENDING_ENROLL_KEY(slug));
+        } catch {
+          /* ignore */
+        }
         showToast('success', 'Successfully enrolled!');
+        setData((prev) => (prev ? { ...prev, is_enrolled: true } : prev));
         navigate(ROUTES.MY_LEARNING);
+      } else if (
+        result.razorpay_key_id &&
+        result.razorpay_order_id &&
+        result.merchant_txn_id != null &&
+        result.amount != null
+      ) {
+        try {
+          sessionStorage.removeItem(PENDING_ENROLL_KEY(slug));
+        } catch {
+          /* ignore */
+        }
+        await loadRazorpayScript();
+        checkoutModalOpened = true;
+        openRazorpayCheckout({
+          key: result.razorpay_key_id,
+          orderId: result.razorpay_order_id,
+          amount: result.amount,
+          currency: result.currency ?? 'INR',
+          businessName: SITE_LEGAL.name,
+          description: result.course_title ?? data.course.title,
+          prefill: {
+            email: result.prefill_email || user?.email,
+            name: result.prefill_name || user?.name,
+          },
+          handler: async (rzpResponse) => {
+            try {
+              await verifyPayment({
+                merchant_txn_id: result.merchant_txn_id!,
+                razorpay_order_id: rzpResponse.razorpay_order_id,
+                razorpay_payment_id: rzpResponse.razorpay_payment_id,
+                razorpay_signature: rzpResponse.razorpay_signature,
+              });
+              showToast('success', 'Payment successful! You are enrolled.');
+              setData((prev) => (prev ? { ...prev, is_enrolled: true } : prev));
+              navigate(ROUTES.MY_LEARNING);
+            } catch (verifyErr) {
+              showToast(
+                'error',
+                getApiErrorMessage(verifyErr, 'Payment received but verification failed. Contact support if charged.')
+              );
+            } finally {
+              buyInFlightRef.current = false;
+              setPurchasing(false);
+            }
+          },
+          onDismiss: () => {
+            buyInFlightRef.current = false;
+            setPurchasing(false);
+          },
+        });
       } else {
-        window.location.href = result.redirect_url;
+        showToast('error', 'Could not start payment. Please try again.');
       }
     } catch (err: any) {
       const errorCode = err?.response?.data?.error?.code;
@@ -84,7 +186,10 @@ export function CourseDetailPage() {
         showToast('error', getApiErrorMessage(err, 'Failed to initiate payment. Please try again.'));
       }
     } finally {
-      setPurchasing(false);
+      if (!checkoutModalOpened) {
+        buyInFlightRef.current = false;
+        setPurchasing(false);
+      }
     }
   };
 
@@ -111,6 +216,7 @@ export function CourseDetailPage() {
   if (!data) return null;
 
   const { course, videos, is_enrolled } = data;
+  const courseIsFree = isCatalogCourseFree(course.is_free);
   const selectedPlan = getPlanByCode(selectedPlanCode);
   const totalDuration = videos.reduce((sum, v) => sum + (v.duration_sec || 0), 0);
 
@@ -241,7 +347,7 @@ export function CourseDetailPage() {
             ) : (
               /* ---- NOT ENROLLED STATE ---- */
               <>
-                {course.is_free ? (
+                {courseIsFree ? (
                   <div className={styles.priceSection}>
                     <span className={styles.priceFree}>Free</span>
                   </div>
@@ -295,11 +401,12 @@ export function CourseDetailPage() {
                   size="lg"
                   fullWidth
                   onClick={handleBuy}
+                  onDoubleClick={(e) => e.preventDefault()}
                   isLoading={purchasing}
                 >
                   {!isAuthenticated
                     ? 'Login to Enroll'
-                    : course.is_free
+                    : courseIsFree
                       ? 'Enroll for Free'
                       : `Pay ${formatOriginalPrice(selectedPlan.amount)}`
                   }
@@ -310,8 +417,8 @@ export function CourseDetailPage() {
                   {course.duration_hours != null && course.duration_hours > 0 && (
                     <li>{formatDuration(course.duration_hours)} of content</li>
                   )}
-                  {!course.is_free && <li>Access for your selected plan period</li>}
-                  {course.is_free && <li>Full access while enrolled</li>}
+                  {!courseIsFree && <li>Access for your selected plan period</li>}
+                  {courseIsFree && <li>Full access while enrolled</li>}
                   <li>Mobile friendly</li>
                 </ul>
               </>

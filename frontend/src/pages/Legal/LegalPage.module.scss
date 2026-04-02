@@ -1,0 +1,120 @@
+.doc {
+  max-width: 42rem;
+  margin: 0 auto;
+}
+
+.hero {
+  margin-bottom: $space-10;
+  padding-bottom: $space-8;
+  border-bottom: 1px solid $color-border;
+}
+
+.accent {
+  display: block;
+  width: 3rem;
+  height: 3px;
+  border-radius: $radius-full;
+  background: $gradient-primary;
+  margin-bottom: $space-4;
+}
+
+.title {
+  font-family: $font-heading;
+  font-size: clamp($font-size-2xl, 4vw, $font-size-3xl);
+  font-weight: $font-weight-bold;
+  color: $color-text;
+  line-height: $line-height-tight;
+  margin: 0 0 $space-3;
+}
+
+.subtitle {
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+  margin: 0 0 $space-4;
+  line-height: $line-height-relaxed;
+}
+
+.updated {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+  padding: $space-2 $space-3;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+}
+
+.section {
+  margin-bottom: $space-10;
+}
+
+.sectionTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text;
+  margin: 0 0 $space-4;
+  padding-bottom: $space-2;
+  border-bottom: 1px solid rgba($color-primary, 0.2);
+}
+
+.prose {
+  font-size: $font-size-base;
+  line-height: 1.7;
+  color: $color-text;
+
+  p {
+    margin: 0 0 $space-4;
+  }
+
+  ul {
+    margin: 0 0 $space-4;
+    padding-left: 1.25rem;
+  }
+
+  li {
+    margin-bottom: $space-2;
+  }
+
+  strong {
+    font-weight: $font-weight-semibold;
+    color: $color-text;
+  }
+}
+
+.termsList {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 $space-6;
+
+  li {
+    position: relative;
+    padding-left: $space-5;
+    margin-bottom: $space-4;
+    line-height: 1.65;
+    color: $color-text;
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0.55em;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: $color-primary-light;
+    }
+  }
+}
+
+.callout {
+  margin: $space-6 0;
+  padding: $space-4 $space-5;
+  border-radius: $radius-lg;
+  border: 1px solid rgba($color-primary, 0.25);
+  background: linear-gradient(135deg, rgba($color-primary, 0.06), rgba($color-secondary, 0.04));
+  font-size: $font-size-sm;
+  line-height: 1.65;
+  color: $color-text;
+}

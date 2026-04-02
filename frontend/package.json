@@ -11,6 +11,7 @@
     "process-logo": "node scripts/strip-logo-bg.mjs"
   },
   "dependencies": {
+    "antd": "^5.29.3",
     "axios": "^1.13.6",
     "hls.js": "^1.6.15",
     "react": "^19.2.4",

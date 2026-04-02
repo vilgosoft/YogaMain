@@ -46,8 +46,8 @@ final class GoogleDriveVideo
     {
         $id = self::extractFileId($url);
 
-        // embedded=true improves embed behaviour in some browsers / hosting CSP setups
-        return $id ? 'https://drive.google.com/file/d/' . $id . '/preview?embedded=true' : null;
+        // Plain /preview keeps the iframe slimmer on mobile than ?embedded=true (fewer stacked controls).
+        return $id ? 'https://drive.google.com/file/d/' . rawurlencode($id) . '/preview' : null;
     }
 
     /**

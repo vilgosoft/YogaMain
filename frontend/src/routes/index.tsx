@@ -20,12 +20,16 @@ import { VideosPage } from '@/pages/Admin/VideosPage';
 import { UsersPage } from '@/pages/Admin/UsersPage';
 import { TransactionsPage } from '@/pages/Admin/TransactionsPage';
 import { PlayerPage } from '@/pages/Player/PlayerPage';
+import { PrivacyPolicyPage } from '@/pages/Legal/PrivacyPolicyPage';
+import { TermsPage } from '@/pages/Legal/TermsPage';
 
 export function AppRoutes() {
   return (
     <Routes>
       {/* Public Routes */}
       <Route path={ROUTES.HOME} element={<HomePage />} />
+      <Route path={ROUTES.PRIVACY_POLICY} element={<PrivacyPolicyPage />} />
+      <Route path={ROUTES.TERMS} element={<TermsPage />} />
       <Route path={ROUTES.LOGIN} element={<LoginPage />} />
       <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
       <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPasswordPage />} />

@@ -1,0 +1,27 @@
+.fullscreenBtn {
+  position: absolute;
+  z-index: 6;
+  right: $space-2;
+  bottom: calc(#{$space-2} + env(safe-area-inset-bottom, 0px));
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: $radius-md;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(12, 12, 18, 0.88);
+  color: #fff;
+  cursor: pointer;
+  touch-action: manipulation;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+
+  &:hover {
+    background: rgba(28, 28, 36, 0.95);
+  }
+
+  &:focus-visible {
+    outline: 2px solid $color-primary;
+    outline-offset: 2px;
+  }
+}

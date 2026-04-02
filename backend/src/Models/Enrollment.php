@@ -49,6 +49,69 @@ class Enrollment
         return (int) $this->db->lastInsertId();
     }
 
+    /**
+     * Idempotent insert — safe for concurrent free-enroll / payment callback retries
+     * (unique user_id + course_id).
+     */
+    public function ensureEnrolled(int $userId, int $courseId): void
+    {
+        $stmt = $this->db->prepare(
+            'INSERT IGNORE INTO enrollments (user_id, course_id) VALUES (:user_id, :course_id)'
+        );
+        $stmt->execute(['user_id' => $userId, 'course_id' => $courseId]);
+    }
+
+    /**
+     * Drop access and clear watch progress for that course (admin unenroll).
+     */
+    public function removeEnrollment(int $userId, int $courseId): void
+    {
+        $del = $this->db->prepare(
+            'DELETE vp FROM video_progress vp
+             INNER JOIN videos v ON v.id = vp.video_id
+             WHERE vp.user_id = :uid AND v.course_id = :cid'
+        );
+        $del->execute(['uid' => $userId, 'cid' => $courseId]);
+
+        $stmt = $this->db->prepare(
+            'DELETE FROM enrollments WHERE user_id = :uid AND course_id = :cid'
+        );
+        $stmt->execute(['uid' => $userId, 'cid' => $courseId]);
+    }
+
+    /**
+     * Replace the user's enrollments with exactly $desiredCourseIds (validated course IDs).
+     */
+    public function syncUserEnrollments(int $userId, array $desiredCourseIds): void
+    {
+        $desiredCourseIds = array_values(array_unique(array_filter(
+            array_map(static fn ($id) => (int) $id, $desiredCourseIds),
+            static fn (int $id) => $id > 0
+        )));
+        sort($desiredCourseIds);
+
+        $stmt = $this->db->prepare('SELECT course_id FROM enrollments WHERE user_id = :uid');
+        $stmt->execute(['uid' => $userId]);
+        $current = array_map('intval', array_column($stmt->fetchAll(), 'course_id'));
+
+        $toRemove = array_diff($current, $desiredCourseIds);
+        $toAdd = array_diff($desiredCourseIds, $current);
+
+        $this->db->beginTransaction();
+        try {
+            foreach ($toRemove as $cid) {
+                $this->removeEnrollment($userId, (int) $cid);
+            }
+            foreach ($toAdd as $cid) {
+                $this->ensureEnrolled($userId, (int) $cid);
+            }
+            $this->db->commit();
+        } catch (\Throwable $e) {
+            $this->db->rollBack();
+            throw $e;
+        }
+    }
+
     public function getByUser(int $userId): array
     {
         $stmt = $this->db->prepare(

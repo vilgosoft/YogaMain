@@ -210,4 +210,37 @@ class Course
             'total_content_hours'  => $totalHours,
         ];
     }
+
+    /**
+     * Minimal rows for admin enrollment picker.
+     * Tolerates DBs without an is_free column (falls back to price &lt;= 0).
+     */
+    public function listForEnrollmentAdmin(): array
+    {
+        try {
+            $stmt = $this->db->query(
+                'SELECT id, title, is_published, is_free, price FROM courses ORDER BY title ASC'
+            );
+        } catch (\PDOException $e) {
+            $stmt = $this->db->query(
+                'SELECT id, title, is_published, price FROM courses ORDER BY title ASC'
+            );
+        }
+
+        $rows = $stmt->fetchAll();
+
+        foreach ($rows as &$r) {
+            $r['id'] = (int) $r['id'];
+            $r['is_published'] = (int) $r['is_published'];
+            if (array_key_exists('is_free', $r) && $r['is_free'] !== null && $r['is_free'] !== '') {
+                $r['is_free'] = (int) $r['is_free'];
+            } else {
+                $r['is_free'] = ((float) ($r['price'] ?? 0) <= 0) ? 1 : 0;
+            }
+            unset($r['price']);
+        }
+        unset($r);
+
+        return $rows;
+    }
 }

@@ -51,6 +51,27 @@ class User
         return $user ?: null;
     }
 
+    public function emailTakenByOtherUser(string $email, int $excludeUserId): bool
+    {
+        $normalized = strtolower(trim($email));
+        $stmt = $this->db->prepare(
+            'SELECT id FROM users WHERE LOWER(TRIM(email)) = :email AND id != :id LIMIT 1'
+        );
+        $stmt->execute(['email' => $normalized, 'id' => $excludeUserId]);
+
+        return (bool) $stmt->fetch();
+    }
+
+    public function phoneTakenByOtherUser(string $phone, int $excludeUserId): bool
+    {
+        $stmt = $this->db->prepare(
+            'SELECT id FROM users WHERE phone = :phone AND id != :id LIMIT 1'
+        );
+        $stmt->execute(['phone' => $phone, 'id' => $excludeUserId]);
+
+        return (bool) $stmt->fetch();
+    }
+
     public function create(array $data): int
     {
         $stmt = $this->db->prepare(
@@ -114,5 +135,30 @@ class User
                 'last_page' => (int) ceil($total / $perPage),
             ],
         ];
+    }
+
+    /**
+     * Permanently remove a user. Clears dependent rows that use ON DELETE RESTRICT on users.id.
+     */
+    public function deleteById(int $id): bool
+    {
+        $this->db->beginTransaction();
+        try {
+            $this->db->prepare('DELETE FROM transactions WHERE user_id = :uid')->execute(['uid' => $id]);
+            $this->db->prepare('DELETE FROM password_reset_tokens WHERE user_id = :uid')->execute(['uid' => $id]);
+            $stmt = $this->db->prepare('DELETE FROM users WHERE id = :id');
+            $stmt->execute(['id' => $id]);
+            $ok = $stmt->rowCount() > 0;
+            if ($ok) {
+                $this->db->commit();
+            } else {
+                $this->db->rollBack();
+            }
+
+            return $ok;
+        } catch (\Throwable $e) {
+            $this->db->rollBack();
+            throw $e;
+        }
     }
 }

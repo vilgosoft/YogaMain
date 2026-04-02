@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { HiOutlineUser, HiOutlineEnvelope, HiOutlinePhone, HiOutlineLockClosed } from 'react-icons/hi2';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/components/ui/Toast/Toast';
@@ -13,6 +13,8 @@ export function RegisterPage() {
   const { register } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
+  const fromPath = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname;
 
   const [form, setForm] = useState({
     name: '',
@@ -54,7 +56,11 @@ export function RegisterPage() {
         password: form.password,
       });
       showToast('success', 'Account created successfully!');
-      navigate(ROUTES.MY_LEARNING);
+      const dest =
+        fromPath && fromPath !== ROUTES.LOGIN && fromPath !== ROUTES.REGISTER
+          ? fromPath
+          : ROUTES.MY_LEARNING;
+      navigate(dest, { replace: true });
     } catch (err: unknown) {
       const errorData = (err as { response?: { data?: { error?: { message?: string; fields?: Record<string, string> } } } })
         ?.response?.data?.error;
@@ -140,7 +146,9 @@ export function RegisterPage() {
 
         <p className={styles.switchAuth}>
           Already have an account?{' '}
-          <Link to={ROUTES.LOGIN}>Sign in</Link>
+          <Link to={ROUTES.LOGIN} state={location.state}>
+            Sign in
+          </Link>
         </p>
       </div>
 

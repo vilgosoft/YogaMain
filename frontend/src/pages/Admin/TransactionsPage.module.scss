@@ -1,0 +1,65 @@
+.actionCell {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+}
+
+.iconDelete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: $radius-md;
+  border: 1px solid rgba($color-error, 0.45);
+  background: transparent;
+  color: $color-error;
+  cursor: pointer;
+  transition:
+    background $transition-fast,
+    border-color $transition-fast;
+
+  &:hover:not(:disabled) {
+    background: rgba($color-error, 0.12);
+    border-color: $color-error;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+.deleteWarning {
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+  margin: 0 0 $space-5;
+  line-height: 1.5;
+}
+
+.deleteHighlight {
+  font-weight: $font-weight-semibold;
+  color: $color-text;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: $space-3;
+}
+
+.dangerBtn {
+  border-color: rgba($color-error, 0.55) !important;
+  color: $color-error !important;
+
+  &:hover:not(:disabled) {
+    background: rgba($color-error, 0.12) !important;
+    border-color: $color-error !important;
+  }
+}

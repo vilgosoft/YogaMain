@@ -7,10 +7,22 @@ export async function initiatePayment(
   planCode?: string
 ): Promise<PaymentInitResponse> {
   const body: { course_id: number; plan_code?: string } = { course_id: courseId };
-  if (planCode) {
-    body.plan_code = planCode;
+  if (planCode != null && String(planCode).trim() !== '') {
+    body.plan_code = String(planCode).trim();
   }
-  const res = await client.post<ApiResponse<PaymentInitResponse>>('/payments/phonepe-init', body);
+  const res = await client.post<ApiResponse<PaymentInitResponse>>('/payments/initiate', body);
+  return res.data.data!;
+}
+
+export interface VerifyPaymentPayload {
+  merchant_txn_id: string;
+  razorpay_order_id: string;
+  razorpay_payment_id: string;
+  razorpay_signature: string;
+}
+
+export async function verifyPayment(payload: VerifyPaymentPayload): Promise<PaymentStatusResponse> {
+  const res = await client.post<ApiResponse<PaymentStatusResponse>>('/payments/verify', payload);
   return res.data.data!;
 }
 

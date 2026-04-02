@@ -1,5 +1,19 @@
+/** Used in Privacy Policy & Terms — update registered office and jurisdiction with your counsel. */
+export const SITE_LEGAL = {
+  name: 'SAI ISHANI YOGASHALA',
+  url: 'https://saiishaniyogashala.in',
+  registeredOffice:
+    'Your registered business address (update with your company / partnership / proprietor particulars as applicable).',
+  jurisdiction: 'Tamil Nadu, India (update city and state as advised by legal counsel).',
+} as const;
+
+/** Shown at top of legal pages; change when you revise the documents. */
+export const LEGAL_LAST_UPDATED = 'March 28, 2026';
+
 export const ROUTES = {
   HOME: '/',
+  PRIVACY_POLICY: '/privacy-policy',
+  TERMS: '/terms',
   LOGIN: '/login',
   REGISTER: '/register',
   FORGOT_PASSWORD: '/forgot-password',

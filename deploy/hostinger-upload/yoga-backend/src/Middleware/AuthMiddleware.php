@@ -4,12 +4,13 @@ namespace App\Middleware;
 
 use App\Services\JwtService;
 use App\Helpers\Response;
+use App\Helpers\RequestAuth;
 
 class AuthMiddleware
 {
     public function handle(): bool
     {
-        $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+        $authHeader = RequestAuth::bearerHeader();
 
         if (!preg_match('/^Bearer\s+(.+)$/i', $authHeader, $matches)) {
             Response::error('Authentication required', 'UNAUTHORIZED', 401);
@@ -27,7 +28,7 @@ class AuthMiddleware
 
         // Store decoded user info in a global for controllers to access
         $GLOBALS['auth_user'] = [
-            'id'    => $decoded->sub,
+            'id'    => (int) $decoded->sub,
             'email' => $decoded->email,
             'role'  => $decoded->role,
         ];

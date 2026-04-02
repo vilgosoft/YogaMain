@@ -46,14 +46,40 @@ class PhonePeService
     public static function extractRedirectUrl(array $response): ?string
     {
         $candidates = [
+            $response['redirectUrl'] ?? null,
+            $response['data']['redirectUrl'] ?? null,
             $response['data']['instrumentResponse']['redirectInfo']['url'] ?? null,
             $response['data']['instrumentResponse']['redirectInfo']['targetUrl'] ?? null,
-            $response['data']['redirectUrl'] ?? null,
-            $response['redirectUrl'] ?? null,
         ];
         foreach ($candidates as $url) {
             if (is_string($url) && $url !== '') {
                 return $url;
+            }
+        }
+
+        return self::findRedirectUrlDeep($response, 0);
+    }
+
+    /** Fallback if redirectUrl is nested (bounded depth; key must be redirectUrl). */
+    private static function findRedirectUrlDeep(mixed $node, int $depth): ?string
+    {
+        if ($depth > 6 || !is_array($node)) {
+            return null;
+        }
+        foreach ($node as $key => $val) {
+            if (
+                $key === 'redirectUrl'
+                && is_string($val)
+                && $val !== ''
+                && (str_starts_with($val, 'http://') || str_starts_with($val, 'https://'))
+            ) {
+                return $val;
+            }
+            if (is_array($val)) {
+                $found = self::findRedirectUrlDeep($val, $depth + 1);
+                if ($found !== null) {
+                    return $found;
+                }
             }
         }
 

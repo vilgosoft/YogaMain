@@ -1,11 +1,8 @@
 -- Sai ishani Yogashala Database Schema
 -- Run this SQL against your MySQL database to create all tables
-
-CREATE DATABASE IF NOT EXISTS yoga_lms
-    CHARACTER SET utf8mb4
-    COLLATE utf8mb4_unicode_ci;
-
-USE yoga_lms;
+--
+-- HOSTINGER: Select your database in phpMyAdmin first, then import this file.
+-- LOCAL/XAMPP: Run in phpMyAdmin or mysql CLI after selecting yoga_lms database.
 
 -- ============================================
 -- Users

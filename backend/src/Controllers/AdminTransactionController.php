@@ -26,4 +26,19 @@ class AdminTransactionController
 
         Response::json($result['transactions'], '', 200, $result['meta']);
     }
+
+    public function delete(array $params): void
+    {
+        $id = (int) ($params['id'] ?? 0);
+        if ($id < 1) {
+            Response::error('Invalid transaction id', 'VALIDATION_ERROR', 422);
+        }
+
+        $deleted = $this->model->deleteById($id);
+        if (!$deleted) {
+            Response::error('Transaction not found', 'NOT_FOUND', 404);
+        }
+
+        Response::json(null, 'Transaction deleted');
+    }
 }

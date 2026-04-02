@@ -99,7 +99,9 @@ export function LoginPage() {
 
         <p className={styles.switchAuth}>
           Don&apos;t have an account?{' '}
-          <Link to={ROUTES.REGISTER}>Create one</Link>
+          <Link to={ROUTES.REGISTER} state={location.state}>
+            Create one
+          </Link>
         </p>
       </div>
 

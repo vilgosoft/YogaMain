@@ -87,8 +87,21 @@ export async function deleteVideo(id: number): Promise<void> {
 }
 
 // Users
+export interface PurchasedCourseRow {
+  course_id: number;
+  title: string;
+  enrolled_at: string;
+}
+
+export interface EnrollmentCourseOption {
+  id: number;
+  title: string;
+  is_published: number;
+  is_free: number;
+}
+
 interface UsersResponse {
-  data: (User & { purchased_courses: Array<{ title: string; enrolled_at: string }> })[];
+  data: (User & { purchased_courses: PurchasedCourseRow[] })[];
   meta: PaginationMeta;
 }
 
@@ -97,8 +110,55 @@ export async function getAdminUsers(params?: Record<string, string | number>): P
   return { data: res.data.data!, meta: res.data.meta! };
 }
 
-export async function updateUser(id: number, data: { is_active?: number; role?: string }): Promise<User> {
+export async function updateUser(
+  id: number,
+  data: {
+    is_active?: number;
+    role?: string;
+    name?: string;
+    email?: string;
+    phone?: string;
+  }
+): Promise<User> {
   const res = await client.patch<ApiResponse<User>>(`/admin/users/${id}`, data);
+  return res.data.data!;
+}
+
+export async function deleteAdminUser(id: number): Promise<void> {
+  await client.delete(`/admin/users/${id}`);
+}
+
+/**
+ * All courses for the enrollment picker. Uses paginated GET /admin/courses only so it works
+ * on servers that have not yet deployed the optional /admin/courses/enrollment-options route.
+ */
+export async function getEnrollmentCourseOptions(): Promise<EnrollmentCourseOption[]> {
+  const courses: Course[] = [];
+  let page = 1;
+  let lastPage = 1;
+  do {
+    const { data, meta } = await getAdminCourses({ page, per_page: 100 });
+    courses.push(...data);
+    lastPage = meta.last_page;
+    page += 1;
+  } while (page <= lastPage);
+
+  return courses.map((c) => ({
+    id: c.id,
+    title: c.title,
+    is_published: c.is_published ? 1 : 0,
+    is_free: c.is_free ? 1 : 0,
+  }));
+}
+
+export async function setUserEnrollments(
+  userId: number,
+  courseIds: number[]
+): Promise<{ purchased_courses: PurchasedCourseRow[] }> {
+  const res = await client.put<ApiResponse<{ purchased_courses: PurchasedCourseRow[] }>>(
+    `/admin/users/${userId}/enrollments`,
+    { course_ids: courseIds }
+  );
   return res.data.data!;
 }
 
@@ -111,4 +171,8 @@ interface TransactionsResponse {
 export async function getAdminTransactions(params?: Record<string, string | number>): Promise<TransactionsResponse> {
   const res = await client.get<ApiResponse<Transaction[]>>('/admin/transactions', { params });
   return { data: res.data.data!, meta: res.data.meta! };
+}
+
+export async function deleteAdminTransaction(id: number): Promise<void> {
+  await client.delete(`/admin/transactions/${id}`);
 }

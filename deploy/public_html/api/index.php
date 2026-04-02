@@ -258,6 +258,7 @@ $router->delete('/admin/categories/:id', [$adminCategoryController, 'delete'], $
 
 // Courses
 $router->get('/admin/courses',         [$adminCourseController, 'index'],  $adminMiddleware);
+$router->get('/admin/courses/enrollment-options', [$adminCourseController, 'enrollmentOptions'], $adminMiddleware);
 $router->post('/admin/courses',        [$adminCourseController, 'create'], $adminMiddleware);
 // POST (not PUT): PHP does not populate $_POST / $_FILES for multipart PUT requests.
 $router->post('/admin/courses/:id/update', [$adminCourseController, 'update'], $adminMiddleware);
@@ -275,10 +276,13 @@ $router->delete('/admin/videos/:id',     [$adminVideoController, 'delete'], $adm
 $adminUserController = new App\Controllers\AdminUserController();
 $router->get('/admin/users',           [$adminUserController, 'index'],  $adminMiddleware);
 $router->patch('/admin/users/:id',     [$adminUserController, 'update'], $adminMiddleware);
+$router->delete('/admin/users/:id',    [$adminUserController, 'delete'], $adminMiddleware);
+$router->put('/admin/users/:id/enrollments', [$adminUserController, 'setEnrollments'], $adminMiddleware);
 
 // Transactions
 $adminTransactionController = new App\Controllers\AdminTransactionController();
 $router->get('/admin/transactions',    [$adminTransactionController, 'index'], $adminMiddleware);
+$router->delete('/admin/transactions/:id', [$adminTransactionController, 'delete'], $adminMiddleware);
 
 // =============================================
 // Public Course Routes
@@ -307,8 +311,9 @@ $router->get('/my-learning', [$userDashboardController, 'myLearning'], [AuthMidd
 // Payment Routes
 // =============================================
 $paymentController = new App\Controllers\PaymentController();
+$router->post('/payments/initiate',              [$paymentController, 'initiate'], [AuthMiddleware::class]);
 $router->post('/payments/phonepe-init',          [$paymentController, 'initiate'], [AuthMiddleware::class]);
-$router->post('/payments/phonepe-callback',      [$paymentController, 'callback']);
+$router->post('/payments/verify',               [$paymentController, 'verify'],  [AuthMiddleware::class]);
 $router->get('/payments/status/:merchant_txn_id', [$paymentController, 'status'],  [AuthMiddleware::class]);
 
 // Dispatch

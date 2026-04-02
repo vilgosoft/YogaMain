@@ -11,6 +11,7 @@ import {
 import { Spinner } from '@/components/ui/Spinner/Spinner';
 import { Button } from '@/components/ui/Button/Button';
 import { PageWrapper } from '@/components/layout/PageWrapper/PageWrapper';
+import { VideoPlayer } from '@/components/video-player';
 import { ROUTES } from '@/utils/constants';
 import { formatVideoTime, formatTotalDurationSeconds } from '@/utils/formatters';
 import { recomputeLessonLocks } from '@/utils/playerLessonLocks';
@@ -23,8 +24,6 @@ import {
   HiOutlineBars3,
   HiOutlineXMark,
   HiOutlineCheckCircle,
-  HiOutlineArrowsPointingOut,
-  HiOutlineArrowsPointingIn,
 } from 'react-icons/hi2';
 import styles from './PlayerPage.module.scss';
 
@@ -93,6 +92,22 @@ function driveHtml5SourceCandidates(
   return out;
 }
 
+/** Drop Drive’s embedded=true so iframe UI is less cluttered (±10s row / double play on many phones). */
+function stripDrivePreviewEmbeddedParam(url: string): string {
+  try {
+    const u = new URL(url);
+    u.searchParams.delete('embedded');
+    let out = u.href;
+    if (out.endsWith('?')) out = out.slice(0, -1);
+    return out;
+  } catch {
+    return url
+      .replace(/([?&])embedded=true(?=&|$)/g, '$1')
+      .replace(/[?&]$/, '')
+      .replace(/\?&/g, '?');
+  }
+}
+
 /** Mobile lesson drawer / sidebar */
 const MOBILE_LAYOUT_MQ = '(max-width: 1023px)';
 
@@ -100,7 +115,6 @@ export function PlayerPage() {
   const { courseId, videoId } = useParams<{ courseId: string; videoId: string }>();
   const navigate = useNavigate();
   const videoRef = useRef<HTMLVideoElement>(null);
-  const playerBoxRef = useRef<HTMLDivElement>(null);
   const html5CandidatesRef = useRef<string[]>([]);
   const curriculumRef = useRef<PlayerCurriculumResponse | null>(null);
   const lessonListRef = useRef<HTMLUListElement>(null);
@@ -121,7 +135,6 @@ export function PlayerPage() {
   const [useDriveEmbed, setUseDriveEmbed] = useState(false);
   /** Index into direct Drive stream URLs tried before iframe fallback */
   const [driveHtml5Attempt, setDriveHtml5Attempt] = useState(0);
-  const [inFullscreenUi, setInFullscreenUi] = useState(false);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -371,60 +384,6 @@ export function PlayerPage() {
     driveHtml5Attempt,
   ]);
 
-  useEffect(() => {
-    const syncDoc = () => {
-      const doc = document as Document & { webkitFullscreenElement?: Element | null };
-      setInFullscreenUi(!!(document.fullscreenElement ?? doc.webkitFullscreenElement));
-    };
-    document.addEventListener('fullscreenchange', syncDoc);
-    document.addEventListener('webkitfullscreenchange', syncDoc);
-    syncDoc();
-    return () => {
-      document.removeEventListener('fullscreenchange', syncDoc);
-      document.removeEventListener('webkitfullscreenchange', syncDoc);
-    };
-  }, []);
-
-  const togglePlayerFullscreen = useCallback(async () => {
-    const doc = document as Document & {
-      webkitFullscreenElement?: Element | null;
-      webkitExitFullscreen?: () => Promise<void>;
-    };
-    const fsEl = document.fullscreenElement ?? doc.webkitFullscreenElement;
-    if (fsEl) {
-      if (document.exitFullscreen) {
-        await document.exitFullscreen().catch(() => {});
-      } else {
-        await doc.webkitExitFullscreen?.().catch(() => {});
-      }
-      return;
-    }
-
-    const video = videoRef.current;
-    const box = playerBoxRef.current;
-    const v = video as (HTMLVideoElement & {
-      webkitEnterFullscreen?: () => void;
-      webkitDisplayingFullscreen?: boolean;
-    }) | null;
-
-    if (activeHtml5Src && v && typeof v.webkitEnterFullscreen === 'function') {
-      if (v.webkitDisplayingFullscreen) return;
-      try {
-        v.webkitEnterFullscreen();
-        return;
-      } catch {
-        /* fall through to element fullscreen */
-      }
-    }
-
-    const el = box;
-    if (el?.requestFullscreen) {
-      await el.requestFullscreen();
-      return;
-    }
-    await (el as HTMLElement & { webkitRequestFullscreen?: () => void })?.webkitRequestFullscreen?.();
-  }, [activeHtml5Src]);
-
   curriculumRef.current = curriculum;
 
   const currentLesson = curriculum?.lessons.find((l) => l.id === currentVideoId);
@@ -519,7 +478,7 @@ export function PlayerPage() {
           <div className={styles.main}>
             <div className={styles.videoShell}>
               <div className={styles.videoStage}>
-                <div className={styles.videoWrapper} ref={playerBoxRef}>
+                <div className={styles.videoWrapper}>
                 {isCurrentLocked ? (
                   <div className={styles.noVideo}>
                     <HiOutlineLockClosed size={48} aria-hidden />
@@ -542,25 +501,30 @@ export function PlayerPage() {
                   <div className={styles.driveEmbedOuter}>
                     <div className={styles.driveEmbedShell}>
                       <iframe
-                        key={driveEmbedPreview}
-                        src={driveEmbedPreview}
+                        key={stripDrivePreviewEmbeddedParam(driveEmbedPreview)}
+                        src={stripDrivePreviewEmbeddedParam(driveEmbedPreview)}
                         className={styles.driveIframe}
                         title={currentLesson?.title ?? 'Lesson video'}
-                        allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+                        allow="autoplay; fullscreen; encrypted-media"
                         referrerPolicy="no-referrer"
                         {...({ credentialless: true } as Record<string, unknown>)}
                       />
                     </div>
                   </div>
                 ) : activeHtml5Src ? (
-                  <video
+                  <VideoPlayer
                     ref={videoRef}
-                    key={`${activeHtml5Src}|${captionsUrl ?? ''}`}
                     src={activeHtml5Src}
-                    controls
-                    playsInline
-                    className={styles.video}
+                    sourceKey={`${activeHtml5Src}|${captionsUrl ?? ''}`}
+                    tracks={
+                      captionsUrl
+                        ? [{ src: captionsUrl, srcLang: 'en', label: 'English', kind: 'captions' }]
+                        : undefined
+                    }
                     preload="metadata"
+                    nativeControls
+                    playsInline
+                    title={currentLesson?.title ?? 'Lesson video'}
                     onContextMenu={(e) => e.preventDefault()}
                     onError={handleVideoError}
                     onLoadedMetadata={() => {
@@ -577,12 +541,7 @@ export function PlayerPage() {
                         el.currentTime = Math.min(l.watched_sec, Math.max(0, el.duration - 0.5));
                       }
                     }}
-                  >
-                    {captionsUrl ? (
-                      <track kind="captions" src={captionsUrl} srcLang="en" label="English" default />
-                    ) : null}
-                    Your browser does not support the video tag.
-                  </video>
+                  />
                 ) : (
                   <div className={styles.noVideo}>
                     <HiOutlineExclamationTriangle size={48} />
@@ -620,21 +579,6 @@ export function PlayerPage() {
                     </button>
                   </div>
                 )}
-                {!isCurrentLocked && !loadingVideo && (activeHtml5Src || (useDriveEmbed && driveEmbedPreview)) ? (
-                  <button
-                    type="button"
-                    className={styles.playerFullscreenBtn}
-                    onClick={() => void togglePlayerFullscreen()}
-                    aria-label={inFullscreenUi ? 'Exit fullscreen' : 'Enter fullscreen'}
-                    title={inFullscreenUi ? 'Exit fullscreen' : 'Fullscreen'}
-                  >
-                    {inFullscreenUi ? (
-                      <HiOutlineArrowsPointingIn size={22} aria-hidden />
-                    ) : (
-                      <HiOutlineArrowsPointingOut size={22} aria-hidden />
-                    )}
-                  </button>
-                ) : null}
                 </div>
               </div>
             </div>
