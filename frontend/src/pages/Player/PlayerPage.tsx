@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import Plyr from 'plyr';
+import 'plyr/dist/plyr.css';
 import client from '@/api/client';
 import type { ApiResponse } from '@/types/api.types';
 import {
@@ -30,10 +32,21 @@ interface VideoAccess {
   player_kind?: 'html5' | 'drive_iframe';
 }
 
+/**
+ * Extract Google Drive file ID from a preview/share URL,
+ * then build a direct-stream URL that works with <video> tag.
+ */
+function driveDirectUrl(previewUrl: string): string | null {
+  const m = previewUrl.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
+  if (!m) return null;
+  return `https://drive.google.com/uc?export=download&id=${m[1]}`;
+}
+
 export function PlayerPage() {
   const { courseId, videoId } = useParams<{ courseId: string; videoId: string }>();
   const navigate = useNavigate();
   const videoRef = useRef<HTMLVideoElement>(null);
+  const plyrRef = useRef<Plyr | null>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [curriculum, setCurriculum] = useState<PlayerCurriculumResponse | null>(null);
@@ -83,8 +96,22 @@ export function PlayerPage() {
       .get<ApiResponse<VideoAccess>>(`/videos/${currentVideoId}`)
       .then((res) => {
         const data = res.data.data!;
-        setPlayerKind(data.player_kind === 'drive_iframe' ? 'drive_iframe' : 'html5');
-        setVideoUrl(normalizeUrl(data.video_url));
+        const kind = data.player_kind === 'drive_iframe' ? 'drive_iframe' : 'html5';
+
+        if (kind === 'drive_iframe') {
+          // Try direct URL for Drive videos so we can use Plyr instead of Drive's iframe
+          const direct = driveDirectUrl(data.video_url);
+          if (direct) {
+            setPlayerKind('html5'); // play through Plyr, not iframe
+            setVideoUrl(direct);
+          } else {
+            setPlayerKind('drive_iframe');
+            setVideoUrl(data.video_url);
+          }
+        } else {
+          setPlayerKind('html5');
+          setVideoUrl(normalizeUrl(data.video_url));
+        }
       })
       .catch((err) => {
         if (err.response?.status === 403) setVideoError('You must be enrolled to watch this lesson.');
@@ -94,19 +121,59 @@ export function PlayerPage() {
       .finally(() => setLoadingVideo(false));
   }, [currentVideoId, normalizeUrl, navigate]);
 
-  // Resume playback position once video loads metadata
-  const handleLoadedMetadata = useCallback(() => {
-    const vid = videoRef.current;
-    const lesson = curriculum?.lessons.find((l) => l.id === currentVideoId);
-    if (vid && lesson && !lesson.is_completed && lesson.watched_sec > 0) {
-      vid.currentTime = Math.min(lesson.watched_sec, Math.max(0, vid.duration - 0.5));
-    }
-  }, [curriculum, currentVideoId]);
+  // Initialize / destroy Plyr when video element or URL changes
+  useEffect(() => {
+    if (!videoRef.current || !videoUrl || playerKind === 'drive_iframe') return;
+
+    // Small delay to ensure DOM is ready
+    const timer = setTimeout(() => {
+      if (!videoRef.current) return;
+
+      // Destroy previous instance
+      plyrRef.current?.destroy();
+
+      plyrRef.current = new Plyr(videoRef.current, {
+        controls: [
+          'play-large',
+          'play',
+          'progress',
+          'current-time',
+          'duration',
+          'mute',
+          'volume',
+          'settings',
+          'fullscreen',
+        ],
+        settings: ['speed'],
+        speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] },
+        tooltips: { controls: true, seek: true },
+        keyboard: { focused: true, global: false },
+        resetOnEnd: false,
+        invertTime: false,
+      });
+
+      // Resume from last position
+      plyrRef.current.on('loadedmetadata', () => {
+        const lesson = curriculum?.lessons.find((l) => l.id === currentVideoId);
+        if (lesson && !lesson.is_completed && lesson.watched_sec > 0 && plyrRef.current) {
+          const dur = plyrRef.current.duration;
+          if (dur > 0) {
+            plyrRef.current.currentTime = Math.min(lesson.watched_sec, Math.max(0, dur - 0.5));
+          }
+        }
+      });
+    }, 50);
+
+    return () => {
+      clearTimeout(timer);
+      plyrRef.current?.destroy();
+      plyrRef.current = null;
+    };
+  }, [videoUrl, playerKind, curriculum, currentVideoId]);
 
   const flushProgress = useCallback(
     async (markComplete: boolean) => {
-      const vid = videoRef.current;
-      const sec = vid ? Math.floor(vid.currentTime) : 0;
+      const sec = plyrRef.current ? Math.floor(plyrRef.current.currentTime) : 0;
       if (!currentVideoId) return;
       try {
         const { course_progress_pct } = await postVideoProgress(currentVideoId, {
@@ -176,8 +243,20 @@ export function PlayerPage() {
       .get<ApiResponse<VideoAccess>>(`/videos/${currentVideoId}`)
       .then((res) => {
         const data = res.data.data!;
-        setPlayerKind(data.player_kind === 'drive_iframe' ? 'drive_iframe' : 'html5');
-        setVideoUrl(normalizeUrl(data.video_url));
+        const kind = data.player_kind === 'drive_iframe' ? 'drive_iframe' : 'html5';
+        if (kind === 'drive_iframe') {
+          const direct = driveDirectUrl(data.video_url);
+          if (direct) {
+            setPlayerKind('html5');
+            setVideoUrl(direct);
+          } else {
+            setPlayerKind('drive_iframe');
+            setVideoUrl(data.video_url);
+          }
+        } else {
+          setPlayerKind('html5');
+          setVideoUrl(normalizeUrl(data.video_url));
+        }
       })
       .catch(() => setVideoError('Failed to load video'))
       .finally(() => setLoadingVideo(false));
@@ -248,34 +327,36 @@ export function PlayerPage() {
                 <button type="button" className={styles.retryBtn} onClick={retryLoadVideo}>Retry</button>
               </div>
             ) : videoUrl && !isDrive ? (
-              <video
-                ref={videoRef}
-                key={videoUrl}
-                src={videoUrl}
-                controls
-                playsInline
-                controlsList="nodownload"
-                className={styles.video}
-                onLoadedMetadata={handleLoadedMetadata}
-                onPause={() => void flushProgress(false)}
-                onEnded={() => void flushProgress(true)}
-                onTimeUpdate={scheduleDebouncedSave}
-                onError={() => setVideoError('Unable to play this video.')}
-                onContextMenu={(e) => e.preventDefault()}
-              />
+              <div className={styles.plyrWrap}>
+                <video
+                  ref={videoRef}
+                  key={videoUrl}
+                  playsInline
+                  crossOrigin="anonymous"
+                  onPause={() => void flushProgress(false)}
+                  onEnded={() => void flushProgress(true)}
+                  onTimeUpdate={scheduleDebouncedSave}
+                  onError={() => setVideoError('Unable to play this video.')}
+                  onContextMenu={(e) => e.preventDefault()}
+                >
+                  <source src={videoUrl} />
+                </video>
+              </div>
             ) : videoUrl && isDrive ? (
-              <iframe
-                key={videoUrl}
-                src={videoUrl}
-                className={styles.driveIframe}
-                title={currentLesson?.title ?? 'Lesson'}
-                allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
-                allowFullScreen
-              />
+              <div className={styles.driveWrap}>
+                <iframe
+                  key={videoUrl}
+                  src={videoUrl}
+                  className={styles.driveIframe}
+                  title={currentLesson?.title ?? 'Lesson'}
+                  allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
             ) : null}
           </div>
 
-          {/* Drive mark complete */}
+          {/* Drive mark complete (only for fallback iframe mode) */}
           {isDrive && videoUrl && !videoError && !loadingVideo && (
             <div className={styles.driveFooter}>
               {currentLesson?.is_completed ? (

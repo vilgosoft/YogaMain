@@ -110,6 +110,11 @@
 /* ── Video section ── */
 .videoSection {
   width: 100%;
+}
+
+/* Plyr wrapper — Plyr manages its own responsive sizing */
+.plyrWrap {
+  width: 100%;
   border-radius: $radius-md;
   overflow: hidden;
   background: #000;
@@ -117,21 +122,48 @@
   @include respond(md) {
     border-radius: $radius-lg;
   }
+
+  // Override Plyr's default colors to match theme
+  :global {
+    .plyr {
+      --plyr-color-main: #{$color-primary};
+      --plyr-video-background: #000;
+      --plyr-badge-background: #{$color-primary};
+      border-radius: inherit;
+    }
+
+    .plyr__video-wrapper {
+      background: #000;
+    }
+
+    // Ensure Plyr is fully responsive
+    .plyr--video {
+      border-radius: inherit;
+    }
+  }
 }
 
-.video {
-  display: block;
+/* Drive iframe fallback wrapper */
+.driveWrap {
+  position: relative;
   width: 100%;
-  max-height: 80vh;
+  padding-top: 56.25%; /* 16:9 */
   background: #000;
+  border-radius: $radius-md;
+  overflow: hidden;
+
+  @include respond(md) {
+    border-radius: $radius-lg;
+  }
 }
 
 .driveIframe {
-  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
-  aspect-ratio: 16 / 9;
+  height: 100%;
   border: 0;
-  background: #000;
 }
 
 .videoPlaceholder {
