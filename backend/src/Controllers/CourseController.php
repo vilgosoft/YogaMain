@@ -383,12 +383,12 @@ class CourseController
 
         Response::json([
             'course' => [
-                'id'              => (int) $course['id'],
-                'title'           => $course['title'],
-                'slug'            => $course['slug'],
-                'category_name'   => $course['category_name'] ?? null,
-                'short_desc'      => $course['short_desc'] ?? null,
-                'thumbnail_url'   => $course['thumbnail_url'] ?? null,
+                'id'            => (int) $course['id'],
+                'title'         => $course['title'],
+                'slug'          => $course['slug'],
+                'category_name' => $course['category_name'] ?? null,
+                'short_desc'    => $course['short_desc'] ?? null,
+                'thumbnail_url' => $course['thumbnail_url'] ?? null,
             ],
             'lessons'             => $lessons,
             'completed_lessons'   => $completedLessons,
